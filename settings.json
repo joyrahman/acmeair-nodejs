@@ -1,9 +1,18 @@
 {
+	"host":"localhost",
 	"port":9080,
+		
 	"contextRoot": "/rest/api",
 		
+	"authservice_host":"localhost",	
 	"authservice_port": 9443,
 	"authContextRoot": "/acmeair-auth-service/rest/api",
+		
+	"customerservice_host":"localhost",
+	"customerservice_port":"9081",
+	
+	"flightbookingservice_host":"localhost",
+	"flightbookingservice_port":"9082",
 		
 	"mongoHost" : "127.0.0.1",
 	"mongoPort" : 27017,

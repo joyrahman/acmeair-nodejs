@@ -24,9 +24,11 @@
   <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
 
   <script type="text/javascript" src="js/acmeair-common.js"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
 
 		<script>
+			var settings;
+		
 			dojo.require("dojo.cookie");
 			dojo.require("dojox.grid.DataGrid");
 			dojo.require("dojo.data.ItemFileWriteStore");
@@ -39,6 +41,12 @@
 			dojo.addOnLoad(pageLoaded);
 			
 		    function pageLoaded() {
+		    	require( [ 'dojo/json', 'dojo/text!/serviceLocations.json' ], 
+    			function( JSON, data )
+				{
+    				settings = JSON.parse( data );
+    			});	
+		    
 		    	updateLoggedInUserWelcome();
 		    	createAndStartGrid();
 		    }
@@ -47,8 +55,9 @@
 		    	var grid, store, dataStore;
 		    	
 		    	dojo.xhrGet({
-					url: "rest/api/bookings/byuser/" + dojo.cookie("loggedinuser"),
+					url: settings.flightbookingservice_location + "/rest/api/bookings/byuser/" + dojo.cookie("loggedinuser"),
 					handleAs: "json",
+					withCredentials: true,
 					load: function(response, ioArgs) {
 						var theData = { items : response };
 						var newStore = new dojo.data.ItemFileWriteStore({
@@ -157,7 +166,8 @@
 				
 				dojo.xhrPost({
 					content : xhrContent,
-					url : 'rest/api/bookings/cancelbooking',
+					url : settings.flightbookingservice_location + '/rest/api/bookings/cancelbooking',
+					withCredentials: true,
 					load : function(response, ioArgs) {
 						alert("Booking Canceled.");
 						createAndStartGrid();

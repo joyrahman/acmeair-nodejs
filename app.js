@@ -30,7 +30,16 @@ var host = (process.env.VCAP_APP_HOST || 'localhost');
 logger.info("host:port=="+host+":"+port);
 
 var authService;
-var authServiceLocation = process.env.AUTH_SERVICE;
+
+// old way to set service
+//var authServiceLocation = process.env.AUTH_SERVICE;
+
+var authServiceLocation;
+if (settings.authservice_port != port || settings.authservice_host != host)
+{
+	authServiceLocation = settings.authservice_host + ':' +  settings.authservice_port;
+}
+
 if (authServiceLocation) 
 {
 	logger.info("Use authservice:"+authServiceLocation);
@@ -92,14 +101,21 @@ app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 		
 
+// main app
 router.post('/login', login);
 router.get('/login/logout', logout);
+
+// flight service
 router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
 router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
 router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
 router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+
+// customer service
 router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
 router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+
+// probably main app?
 router.get('/config/runtime', routes.getRuntimeInfo);
 router.get('/config/dataServices', routes.getDataServiceInfo);
 router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
@@ -112,6 +128,8 @@ router.get('/config/countAirports' , routes.countAirports);
 //router.get('/loaddb', startLoadDatabase);
 router.get('/loader/load', startLoadDatabase);
 router.get('/loader/query', loader.getNumConfiguredCustomers);
+
+// ?
 router.get('/checkstatus', checkStatus);
 
 if (authService && authService.hystrixStream)
