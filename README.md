@@ -1,3 +1,4 @@
+
 # Acme Air in NodeJS 
 
 An implementation of the Acme Air sample application for NodeJS.  This implementation can support multiple datastores, can run in several application modes, and can support running on a variety of runtime platforms including standalone bare metal  system, Virtual Machines, docker containers, IBM Bluemix, IBM Bluemix Container Service.
@@ -44,19 +45,38 @@ Assume MongoDB started on 127.0.0.1:27017
 
 	npm install
 
-### Run Acmeair in Monolithic on Local
-
-	node app.js
-		
-		
 ### Run Acmeair in Micro-Service on Local
-
+	
+	Open public/serviceLocations.json and make sure service ports are set.
+	These should match settings.json
+	
+		"customerservice_location": "http://localhost:9081",
+		"flightbookingservice_location"  : "http://localhost:9082"	
+	
 	node authservice-app.js
+		
+	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
+	node customerservice_app.js
+
+	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
+	node flightbookingservice_app.js
+	
 	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
 	node app.js
 	
+### Run Acmeair in Monolithic on Local
+
+	Open public/serviceLocation and set service ports to an empty string.
+	
+		"customerservice_port": "",
+		"flightbookingservice_port"  : ""		
+
+	node app.js
+		
+	
 ### Run Acmeair in Micro-Service with Netflix Hystrix Stream enabled on Local
 
+	
 	node authservice-app.js
 	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
 	set enableHystrix=true or export enableHystrix=true

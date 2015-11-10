@@ -30,15 +30,7 @@ var host = (process.env.VCAP_APP_HOST || 'localhost');
 logger.info("host:port=="+host+":"+port);
 
 var authService;
-
-// old way to set service
-//var authServiceLocation = process.env.AUTH_SERVICE;
-
-var authServiceLocation;
-if (settings.authservice_port != port || settings.authservice_host != host)
-{
-	authServiceLocation = settings.authservice_host + ':' +  settings.authservice_port;
-}
+var authServiceLocation = process.env.AUTH_SERVICE;
 
 if (authServiceLocation) 
 {

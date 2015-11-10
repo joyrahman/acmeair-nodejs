@@ -25,14 +25,15 @@ var logger = log4js.getLogger('flightbookingervice_app');
 logger.setLevel(settings.loggerLevel);
 
 
-var host = (process.env.VCAP_APP_HOST || 'localhost');
-var port=settings.flightbookingservice_port;
+var host=(process.env.VCAP_FLIGHTBOOKING_SERVICE_APP_HOST  || 'localhost');
+var port=(process.env.VCAP_FLIGHTBOOKING_SERVICE_APP_PORT || settings.flightbookingservice_port);
 
 logger.info("host:port=="+host+":"+port);
 
-// Running flightbooking service, so assume authservice is running also
+//Running customerservice, so assume authservice is running also
 var authService;
-var authServiceLocation = 'http://' + settings.authservice_host + ':' +  settings.authservice_port;
+
+var authServiceLocation = process.env.AUTH_SERVICE;
 if (authServiceLocation) 
 {
 	logger.info("Use authservice:" + authServiceLocation);
@@ -113,10 +114,13 @@ initDB();
 
 
 function allowCrossDomain(req, res, next) {
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'x-requested-with,Content-Type');
-  res.setHeader('Access-Control-Allow-Origin', "http://" + settings.host + ":" + settings.port);
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+	res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+	res.setHeader('Access-Control-Allow-Headers', 'x-requested-with,Content-Type');
+	   
+	// This should probably be more strict
+	res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+	res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
