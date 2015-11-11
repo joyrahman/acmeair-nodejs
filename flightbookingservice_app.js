@@ -25,8 +25,8 @@ var logger = log4js.getLogger('flightbookingervice_app');
 logger.setLevel(settings.loggerLevel);
 
 
-var host=(process.env.VCAP_FLIGHTBOOKING_SERVICE_APP_HOST  || 'localhost');
-var port=(process.env.VCAP_FLIGHTBOOKING_SERVICE_APP_PORT || settings.flightbookingservice_port);
+var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.flightbookingservice_port);
+var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
 
