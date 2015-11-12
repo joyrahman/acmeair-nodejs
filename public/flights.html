@@ -28,7 +28,11 @@
   <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
 
   <script>
+    var settings;
+  
 	dojo.require("dojo.parser");
+	
+	dojo.require("dojo.cookie");
 			
 	dojo.require("dijit.Dialog");
 	dojo.require("dijit.layout.StackContainer");
@@ -60,7 +64,7 @@
 				returnDate: returnDate,
 				oneWay: oneWayChecked
 			},
-			url: 'rest/api/flights/queryflights',
+			url: '/rest/api/flights/queryflights',
 			handleAs: "json",
 			load: function(response, ioArgs) {
 				if (response.tripFlights.length == 0) {
@@ -124,7 +128,7 @@
 			
 	dojo.addOnLoad(pageLoaded);
 			
-	function pageLoaded() {
+	function pageLoaded() {    	
 	   	updateLoggedInUserWelcome();
 	}
 		    
@@ -219,7 +223,7 @@
 		
 		dojo.xhrPost({
 			content : xhrContent,
-			url : 'rest/api/bookings/bookflights',
+			url: '/rest/api/bookings/bookflights',
 			handleAs: "json",
 			load : function(response, ioArgs) {
 				dojo.byId("bookingToFlight").innerHTML = response.departBookingId;

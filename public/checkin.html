@@ -27,6 +27,8 @@
   <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
 
 		<script>
+			var settings;
+		
 			dojo.require("dojo.cookie");
 			dojo.require("dojox.grid.DataGrid");
 			dojo.require("dojo.data.ItemFileWriteStore");
@@ -47,7 +49,7 @@
 		    	var grid, store, dataStore;
 		    	
 		    	dojo.xhrGet({
-					url: "rest/api/bookings/byuser/" + dojo.cookie("loggedinuser"),
+					url: "/rest/api/bookings/byuser/" + dojo.cookie("loggedinuser"),
 					handleAs: "json",
 					load: function(response, ioArgs) {
 						var theData = { items : response };
@@ -157,7 +159,7 @@
 				
 				dojo.xhrPost({
 					content : xhrContent,
-					url : 'rest/api/bookings/cancelbooking',
+					url : '/rest/api/bookings/cancelbooking',
 					load : function(response, ioArgs) {
 						alert("Booking Canceled.");
 						createAndStartGrid();

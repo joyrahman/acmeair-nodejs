@@ -31,6 +31,14 @@ logger.info("host:port=="+host+":"+port);
 
 var authService;
 var authServiceLocation = process.env.AUTH_SERVICE;
+
+var customerService;
+var customerServiceLocation = process.env.CUSTOMER_SERVICE;
+
+var flightbookingService;
+var flightbookingServiceLocation = process.env.FLIGHTBOOKING_SERVICE;
+
+
 if (authServiceLocation) 
 {
 	logger.info("Use authservice:"+authServiceLocation);
@@ -48,6 +56,18 @@ if (authServiceLocation)
 	}
 }
 
+if(customerServiceLocation) 
+{
+	logger.info("Use customerservice:"+customerServiceLocation);
+	customerService = new require('./customerhttp/index.js')(settings);
+}
+
+if(flightbookingServiceLocation) 
+{
+	logger.info("Use flightbookingservice:"+flightbookingServiceLocation);
+	flightbookingService = new require('./flightbookinghttp/index.js')(settings);
+}
+
 var dbtype = process.env.dbtype || "mongo";
 
 // Calculate the backend datastore type if run inside BLuemix or cloud foundry
@@ -62,7 +82,7 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./routes/index.js')(dbtype, authService,settings);
+var routes = new require('./routes/index.js')(dbtype, authService, customerService, flightbookingService,settings);
 var loader = new require('./loader/loader.js')(routes, settings);
 
 // Setup express with 4.0.0
@@ -92,14 +112,21 @@ app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 		
 
+// main app
 router.post('/login', login);
 router.get('/login/logout', logout);
+
+// flight service
 router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
 router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
 router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
 router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+
+// customer service
 router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
 router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+
+// probably main app?
 router.get('/config/runtime', routes.getRuntimeInfo);
 router.get('/config/dataServices', routes.getDataServiceInfo);
 router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
@@ -112,6 +139,8 @@ router.get('/config/countAirports' , routes.countAirports);
 //router.get('/loaddb', startLoadDatabase);
 router.get('/loader/load', startLoadDatabase);
 router.get('/loader/query', loader.getNumConfiguredCustomers);
+
+// ?
 router.get('/checkstatus', checkStatus);
 
 if (authService && authService.hystrixStream)

@@ -14,10 +14,11 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, authService, settings) {
+module.exports = function (dbtype, authService, customerService, flightbookingService,settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
+	var http = require('http')
 	var flightCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
@@ -117,6 +118,16 @@ module.exports = function (dbtype, authService, settings) {
 	module.queryflights = function(req, res) {
 		logger.debug('querying flights');
 		
+		if (flightbookingService) {
+			flightbookingService.queryFlights(req.body, function(err,flightData) {
+			if (err) {
+				res.sendStatus(500);
+			}
+				res.send(flightData);
+			});
+			return;
+		}
+		
 		var fromAirport = req.body.fromAirport;
 		var toAirport = req.body.toAirport;
 		var fromDateWeb = new Date(req.body.fromDate);
@@ -169,6 +180,17 @@ module.exports = function (dbtype, authService, settings) {
 
 	module.bookflights = function(req, res) {
 		logger.debug('booking flights');
+						
+		if (flightbookingService) {
+			
+			flightbookingService.bookFlights(req.body, function(err,bookingInfo) {
+			if (err) {
+				res.sendStatus(500);
+			}
+				res.send(bookingInfo);
+			});
+			return;
+		}	
 		
 		var userid = req.body.userid;
 		var toFlight = req.body.toFlightId;
@@ -196,6 +218,18 @@ module.exports = function (dbtype, authService, settings) {
 	module.cancelBooking = function(req, res) {
 		logger.debug('canceling booking');
 		
+		if (flightbookingService) {	
+			flightbookingService.cancelBooking(req.body, function(error) {
+				if (error) {
+					res.send({'status':'error'});
+				}
+				else {
+					res.send({'status':'success'});
+				}
+			});
+			return;
+		}
+		
 		var number = req.body.number;
 		var userid = req.body.userid;
 		
@@ -212,6 +246,16 @@ module.exports = function (dbtype, authService, settings) {
 	module.bookingsByUser = function(req, res) {
 		logger.debug('listing booked flights by user ' + req.params.user);
 	
+		if (flightbookingService) {
+			flightbookingService.getBookingsByUser(req.params.user, function(err,bookings) {
+			if (err) {
+				res.sendStatus(500);
+			}
+				res.send(bookings);
+			});
+			return
+		}
+		
 		getBookingsByUser(req.params.user, function(err, bookings) {
 			if (err) {
 				res.sendStatus(500);
@@ -222,17 +266,37 @@ module.exports = function (dbtype, authService, settings) {
 
 	module.getCustomerById = function(req, res) {
 		logger.debug('getting customer by user ' + req.params.user);
-	
-		getCustomer(req.params.user, function(err, customer) {
+					
+		if(customerService) {
+			customerService.getCustomer(req.params.user, function(err, customer) {
 			if (err) {
 				res.sendStatus(500);
 			}
 			res.send(customer);
+			});
+			return;
+		}
+		
+		getCustomer(req.params.user, function(err, customer) {
+		if (err) {
+			res.sendStatus(500);
+		}
+		res.send(customer);
 		});
 	};
 
 	module.putCustomerById = function(req, res) {
 		logger.debug('putting customer by user ' + req.params.user);
+		
+		if(customerService) {
+			customerService.updateCustomer(req.params.user, req.body, function(err, customer) {
+			if (err) {
+				res.sendStatus(500);
+			}
+			res.send(customer);
+			});
+			return;
+		}
 		
 		updateCustomer(req.params.user, req.body, function(err, customer) {
 			if (err) {
@@ -394,6 +458,7 @@ module.exports = function (dbtype, authService, settings) {
 	}
 
 	function getCustomer(username, callback /* (error, Customer) */) {
+								
 	    dataaccess.findOne(module.dbNames.customerName, username, callback);
 	}
 
@@ -417,7 +482,7 @@ module.exports = function (dbtype, authService, settings) {
 
 	function getFlightByAirportsAndDepartureDate(fromAirport, toAirport, flightDate, callback /* error, flightSegment, flights[] */) {
 		logger.debug("getFlightByAirportsAndDepartureDate " + fromAirport + " " + toAirport + " " + flightDate);
-		
+						
 		getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, function(error, flightsegment) {
 			if (error) {
 				logger.error("Hit error:"+error);
