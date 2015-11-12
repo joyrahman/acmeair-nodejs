@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
   
   <script type="text/javascript" src="js/acmeair-common.js"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
 
   <script>
     var settings;
@@ -64,9 +64,8 @@
 				returnDate: returnDate,
 				oneWay: oneWayChecked
 			},
-			url: settings.flightbookingservice_location + '/rest/api/flights/queryflights',
+			url: '/rest/api/flights/queryflights',
 			handleAs: "json",
-			withCredentials: true,
 			load: function(response, ioArgs) {
 				if (response.tripFlights.length == 0) {
 					alert("no flights");
@@ -129,13 +128,7 @@
 			
 	dojo.addOnLoad(pageLoaded);
 			
-	function pageLoaded() {
-		require( [ 'dojo/json', 'dojo/text!/serviceLocations.json' ], 
-    	function( JSON, data )
-		{
-    		settings = JSON.parse( data );
-    	});	
-    	
+	function pageLoaded() {    	
 	   	updateLoggedInUserWelcome();
 	}
 		    
@@ -230,9 +223,8 @@
 		
 		dojo.xhrPost({
 			content : xhrContent,
-			url: settings.flightbookingservice_location +  '/rest/api/bookings/bookflights',
+			url: '/rest/api/bookings/bookflights',
 			handleAs: "json",
-			withCredentials: true,
 			load : function(response, ioArgs) {
 				dojo.byId("bookingToFlight").innerHTML = response.departBookingId;
 				if (response.returnBookingId) {

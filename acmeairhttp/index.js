@@ -20,12 +20,7 @@ module.exports = function (settings) {
 
     var contextRoot = settings.authContextRoot || "/acmeair-auth-service/rest/api"
 	var location = process.env.AUTH_SERVICE;
-	
-    if (!location)
-    {
-    	location=settings.authservice_host + ':' +  settings.authservice_port;
-    }
-    
+	   
     var hostAndPort = location.split(":");
 
 	var log4js = require('log4js');

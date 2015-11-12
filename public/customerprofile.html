@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojox/grid/resources/claroGrid.css">
   
   <script type="text/javascript" src="js/acmeair-common.js"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js" djConfig="parseOnLoad: true"></script>
 
   <script> 
   	var settings;
@@ -46,12 +46,7 @@
 			
 				
 	function pageLoaded() {
-		require( [ 'dojo/json', 'dojo/text!/serviceLocations.json' ], 
-    	function( JSON, data )
-		{
-    		settings = JSON.parse( data );
-    	});	
-	
+			
 		var loggedinuser = dojo.cookie("loggedinuser");
 		if (loggedinuser == null) {
 			alert("you must login first to access this page");
@@ -65,15 +60,14 @@
 		    
     function loadCustomerProfileData(userid) {
 	    	dojo.xhrGet({
-				url: settings.customerservice_location + '/rest/api/customer/byid/' + userid,
+				url: '/rest/api/customer/byid/' + userid,
 				handleAs: "json",
 				load: function(response, ioArgs) {
 					updateFormData(response);
 				},
 				error: function(response, ioArgs) {
 					alert(response);
-				},
-				withCredentials: true
+				}
 			});
     }
     
@@ -122,7 +116,7 @@
 		}
     	
 		dojo.xhrPost({
-			url: settings.customerservice_location + '/rest/api/customer/byid/' + userid,
+			url: '/rest/api/customer/byid/' + userid,
 			postData : dojo.toJson(customerData),
 			handleAs: "json",
 			headers: { "Content-Type": "application/json"},
@@ -132,8 +126,7 @@
 			},
 			error: function(response, ioArgs) {
 				alert(response);
-			},
-			withCredentials: true
+			}
 		});
     }
 	

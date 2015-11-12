@@ -28,6 +28,8 @@ logger.setLevel(settings.loggerLevel);
 var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.customerservice_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
+var acceptedOrigin = (process.env.MAIN_SERVICE || 'localhost:9080');
+
 logger.info("host:port=="+host+":"+port);
 
 //Running customerservice, so assume authservice is running also
@@ -94,40 +96,19 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
-// Allow cross domain access from the main app
-app.use(allowCrossDomain);
-
 var router = express.Router(); 				
 var routes = new require('./customerservice/routes/index.js')(dbtype,authService,settings); 
 
-router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
-router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+router.get('/customer/byid/:user', routes.getCustomerById);
+router.post('/customer/byid/:user', routes.putCustomerById);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use('/rest/api', router);
+app.use(settings.customerContextRoot, router);
 
 var initialized = false;
 var serverStarted = false;
 
 initDB();
-
-
-
-function allowCrossDomain(req, res, next) {
-	
-   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-   res.setHeader('Access-Control-Allow-Headers', 'x-requested-with,Content-Type');
-   
-   // This should probably be more strict
-   res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
-   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-}
 
 function initDB(){
     if (initialized ) return;

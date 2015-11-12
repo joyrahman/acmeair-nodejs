@@ -92,42 +92,21 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
-// Allow cross domain access from the main app
-app.use(allowCrossDomain);
-
 var router = express.Router(); 	
-var routes = new require('./flightbookingservice/routes/index.js')(dbtype,authService,settings); 
+var routes = new require('./flightbookingservice/routes/index.js')(dbtype,settings); 
 
-router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
-router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
-router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
-router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+router.post('/flights/queryflights', routes.queryflights);
+router.post('/bookings/bookflights', routes.bookflights);
+router.post('/bookings/cancelbooking', routes.cancelBooking);
+router.get('/bookings/byuser/:user', routes.bookingsByUser);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.contextRoot, router);
+app.use(settings.flightbookingContextRoot, router);
 
 var initialized = false;
 var serverStarted = false;
 
 initDB();
-
-
-
-function allowCrossDomain(req, res, next) {
-  
-	res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-	res.setHeader('Access-Control-Allow-Headers', 'x-requested-with,Content-Type');
-	   
-	// This should probably be more strict
-	res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
-	res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-}
 
 function initDB(){
     if (initialized ) return;

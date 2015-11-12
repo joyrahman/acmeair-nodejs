@@ -1,4 +1,0 @@
-{	
-	"customerservice_location": "http://localhost:9081",
-	"flightbookingservice_location"  : "http://localhost:9082"		
-}

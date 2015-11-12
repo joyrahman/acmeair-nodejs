@@ -32,6 +32,13 @@ logger.info("host:port=="+host+":"+port);
 var authService;
 var authServiceLocation = process.env.AUTH_SERVICE;
 
+var customerService;
+var customerServiceLocation = process.env.CUSTOMER_SERVICE;
+
+var flightbookingService;
+var flightbookingServiceLocation = process.env.FLIGHTBOOKING_SERVICE;
+
+
 if (authServiceLocation) 
 {
 	logger.info("Use authservice:"+authServiceLocation);
@@ -49,6 +56,18 @@ if (authServiceLocation)
 	}
 }
 
+if(customerServiceLocation) 
+{
+	logger.info("Use customerservice:"+customerServiceLocation);
+	customerService = new require('./customerhttp/index.js')(settings);
+}
+
+if(flightbookingServiceLocation) 
+{
+	logger.info("Use flightbookingservice:"+flightbookingServiceLocation);
+	flightbookingService = new require('./flightbookinghttp/index.js')(settings);
+}
+
 var dbtype = process.env.dbtype || "mongo";
 
 // Calculate the backend datastore type if run inside BLuemix or cloud foundry
@@ -63,7 +82,7 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./routes/index.js')(dbtype, authService,settings);
+var routes = new require('./routes/index.js')(dbtype, authService, customerService, flightbookingService,settings);
 var loader = new require('./loader/loader.js')(routes, settings);
 
 // Setup express with 4.0.0

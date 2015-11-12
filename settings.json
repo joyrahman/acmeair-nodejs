@@ -7,7 +7,10 @@
 	"authContextRoot": "/acmeair-auth-service/rest/api",
 		
 	"customerservice_port": 9081,
+	"customerContextRoot": "/acmeair-customer-service/rest/api",
+	
 	"flightbookingservice_port": 9082,
+	"flightbookingContextRoot": "/acmeair-flightbooking-service/rest/api",
 		
 	"mongoHost" : "127.0.0.1",
 	"mongoPort" : 27017,
