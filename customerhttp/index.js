@@ -27,8 +27,9 @@ module.exports = function (settings) {
 	var logger = log4js.getLogger('customerhttp');
 	logger.setLevel(settings.loggerLevel);
 	
-    module.getCustomer = function (userid, callback /* (error, userid) */){
+    module.getCustomer = function (userid, sessionid, callback /* (error, userid) */){
 
+    	    	
 		var path = contextRoot+"/customer/byid/" + userid;
 	     	var options = {
 			hostname: hostAndPort[0],
@@ -36,16 +37,19 @@ module.exports = function (settings) {
 		    	path: path,
 		    	method: "GET",
 		    	headers: {
-		    	      'Content-Type': 'application/json'
+		    	      'Content-Type': 'application/json',
+		    	      'Cookie':'sessionid='+ sessionid
 		    	}
+	     		
 	    }
 	
-	    logger.debug('getCustomer request:'+JSON.stringify(options));
+	    logger.info('getCustomer request:'+JSON.stringify(options));
 	
 	    var request = http.request(options, function(response){
 	      		var data='';
 	      		response.setEncoding('utf8');
 	      		response.on('data', function (chunk) {
+	      		  logger.info('getCustomer chunk:'+chunk);
 		   			data +=chunk;
 	      		});
 	      		 response.on('end', function(){
@@ -61,8 +65,9 @@ module.exports = function (settings) {
 	    });
 	   	request.end();
 	}
-
-    module.updateCustomer = function (userid, customer, callback /* (error, userid) */){
+   
+   
+    module.updateCustomer = function (userid, sessionid, customer, callback /* (error, userid) */){
     	    	
     	customerData = JSON.stringify(customer);
     	
@@ -74,7 +79,8 @@ module.exports = function (settings) {
 		    	method: "POST",
 		    	headers: {
 		    	      'Content-Type': 'application/json',
-		    	      'Content-Length': customerData.length
+		    	      'Content-Length': customerData.length,
+		    	      'Cookie':'sessionid='+ sessionid
 		    	}
 	    }
 	

@@ -117,14 +117,25 @@ router.post('/login', login);
 router.get('/login/logout', logout);
 
 // flight service
-router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
-router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
-router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
-router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+if(flightbookingServiceLocation) {
+	router.post('/flights/queryflights', routes.queryflights);
+	router.post('/bookings/bookflights',  routes.bookflights);
+	router.post('/bookings/cancelbooking', routes.cancelBooking);
+	router.get('/bookings/byuser/:user',  routes.bookingsByUser);
+} else {
+	router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
+	router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
+	router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
+	router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+}
 
-// customer service
-router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
-router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+if(customerServiceLocation) {
+	router.get('/customer/byid/:user', routes.getCustomerById);
+	router.post('/customer/byid/:user',  routes.putCustomerById);
+} else {
+	router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
+	router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+}
 
 // probably main app?
 router.get('/config/runtime', routes.getRuntimeInfo);

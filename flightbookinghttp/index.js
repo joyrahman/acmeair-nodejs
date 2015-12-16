@@ -16,7 +16,8 @@
 
 module.exports = function (settings) {
     var module = {};
-    var http = require('http')
+    var http = require('http');
+    var querystring = require('querystring');
 
     var contextRoot = settings.flightbookingContextRoot || "/acmeair-flightbooking-service/rest/api"
 	var location = process.env.FLIGHTBOOKING_SERVICE;
@@ -28,33 +29,37 @@ module.exports = function (settings) {
 	logger.setLevel(settings.loggerLevel);
 	   
 	
-	module.queryFlights = function(body, callback) {
-		doPost('/flights/queryflights/',body,function(err,result) {
+	module.queryFlights = function(sessionid, body, callback) {
+		doPost('/flights/queryflights/',sessionid, body,function(err,result) {
 			callback(err,result);
 		});
 	}
 	
-	module.bookFlights = function(body, callback) {
-		doPost('/bookings/bookflights/',body,function(err,result) {
+	module.bookFlights = function(sessionid, body, callback) {
+		doPost('/bookings/bookflights/',sessionid, body,function(err,result) {
 			callback(err,result);
 		});
 	}
 	
-	module.cancelBooking = function(body, callback) {
-		doPost('/bookings/cancelbooking/',body,function(err,result) {
+	module.cancelBooking = function(sessionid, body, callback) {
+		doPost('/bookings/cancelbooking/',sessionid, body,function(err,result) {
+			logger.info(result);
 			callback(err);
 		});
 	}
 	
-	module.getBookingsByUser = function(userid, callback) {
-		doGet('/bookings/byUser/' + userid, function(err,result) {
+	module.getBookingsByUser = function(sessionid, userid, callback) {
+		doGet('/bookings/byuser/' + userid, sessionid, function(err,result) {
+			logger.info(result);
 			callback(err,result);
 		});
 	}
 	
-    doPost = function (restLocation, body, callback) {
+    doPost = function (restLocation, sessionid, body, callback) {
     	    	
-    	bodyString = JSON.stringify(body);
+    	bodyString = querystring.stringify(body);
+        
+    	logger.info("queryString:" + bodyString);
     	
 		var path = contextRoot + restLocation;
 	    var options = {
@@ -63,8 +68,9 @@ module.exports = function (settings) {
 		    	path: path,
 		    	method: "POST",
 		    	headers: {
-		    	      'Content-Type': 'application/json',
-		    	      'Content-Length': bodyString.length
+		    		  'Content-Type': 'application/x-www-form-urlencoded',
+		              'Content-Length': Buffer.byteLength(bodyString),
+		    	      'Cookie':'sessionid='+ sessionid
 		    	}
 	    }
 	
@@ -91,7 +97,7 @@ module.exports = function (settings) {
 	   	request.end();
 	}
     
-    doGet = function (restLocation, callback) {   	
+    doGet = function (restLocation, sessionid, callback) {   	
     	
 		var path = contextRoot + restLocation;
 	    var options = {
@@ -100,7 +106,9 @@ module.exports = function (settings) {
 		    	path: path,
 		    	method: "GET",
 		    	headers: {
-		    	      'Content-Type': 'application/json'
+		    	      'Content-Type': 'application/json',
+		    		  //'Content-Type': 'application/x-www-form-urlencoded',
+		    	      'Cookie':'sessionid='+ sessionid
 		    	}
 	    }
 	

@@ -93,12 +93,12 @@ app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 	
-var routes = new require('./flightbookingservice/routes/index.js')(dbtype,settings); 
+var routes = new require('./flightbookingservice/routes/index.js')(dbtype,authService, settings); 
 
-router.post('/flights/queryflights', routes.queryflights);
-router.post('/bookings/bookflights', routes.bookflights);
-router.post('/bookings/cancelbooking', routes.cancelBooking);
-router.get('/bookings/byuser/:user', routes.bookingsByUser);
+router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
+router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
+router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
+router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.flightbookingContextRoot, router);

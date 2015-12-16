@@ -104,7 +104,7 @@ module.exports = function (dbtype, authService, settings) {
 	    dataaccess.findOne(module.dbNames.customerName, username, callback);
 	}
 	
-	function updateCustomer(login, customer, callback /* (error, Customer) */) {
+	function updateCustomer(login, customer, callback /* (error, Customer) */) {						
 	    dataaccess.update(module.dbNames.customerName, customer,callback)
 	}
 

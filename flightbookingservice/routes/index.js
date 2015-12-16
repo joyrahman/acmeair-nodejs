@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, settings) {
+module.exports = function (dbtype, authService,settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -115,7 +115,8 @@ module.exports = function (dbtype, settings) {
 	};
 
 	module.cancelBooking = function(req, res) {
-		logger.debug('canceling booking');
+		logger.info('canceling booking');	
+		logger.info(req.body);
 		
 		var number = req.body.number;
 		var userid = req.body.userid;
@@ -137,12 +138,53 @@ module.exports = function (dbtype, settings) {
 			if (err) {
 				res.sendStatus(500);
 			}
+			logger.info(bookings);
 			res.send(bookings);
 		});
 	};
 	
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
+	}
+	
+	module.checkForValidSessionCookie = function(req, res, next) {
+		logger.debug('checkForValidCookie');
+		var sessionid = req.cookies.sessionid;
+		if (sessionid) {
+			sessiondid = sessionid.trim();
+		}
+		if (!sessionid || sessionid == '') {
+			logger.info('checkForValidCookie - no sessionid cookie so returning 403');
+			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
+			res.sendStatus(403);
+			return;
+		}
+	
+		validateSession(sessionid, function(err, customerid) {
+			if (err) {
+				logger.debug('checkForValidCookie - system error validating session so returning 500');
+				res.sendStatus(500);
+				return;
+			}
+			
+			if (customerid) {
+				logger.debug('checkForValidCookie - good session so allowing next route handler to be called');
+				req.acmeair_login_user = customerid;
+				next();
+				return;
+			}
+			else {
+				logger.info('checkForValidCookie - bad session so returning 403');
+				logger.debug('checkForValidCookie - bad session so returning 403');
+				res.sendStatus(403);
+				return;
+			}
+		});
+	}
+	
+	function validateSession(sessionId, callback /* (error, userid) */) {
+		authService.validateSession(sessionId,callback);
+		return;
 	}
 	
 	function getBookingsByUser(username, callback /* (error, Bookings) */) {
@@ -234,7 +276,7 @@ module.exports = function (dbtype, settings) {
 		var now = new Date();
 		var docId = uuid.v4();
 	
-		var document = { "_id" : docId, "customerId" : userid, "flightId" : flightId, "dateOfBooking" : now };
+		var document = { "_id" : docId, "customerId" : userid, "flightId" : flightId, "dateOfBooking" : now,  "bookingId" : docId };
 		
 		dataaccess.insertOne(module.dbNames.bookingName,document,function(err){
 			callback(err, docId);

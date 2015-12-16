@@ -29,6 +29,7 @@ module.exports = function (settings) {
 	
     module.createSession = function (userid, callback /* (error, sessionId) */){
 		var path = contextRoot+"/authtoken/byuserid/" + userid;
+		logger.info("calling  " + hostAndPort[0] + ":" + hostAndPort[1] + path);
 	     	var options = {
 			hostname: hostAndPort[0],
 		 	port: hostAndPort[1] || 80,

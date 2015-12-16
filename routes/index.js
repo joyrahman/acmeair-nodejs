@@ -119,7 +119,7 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 		logger.debug('querying flights');
 		
 		if (flightbookingService) {
-			flightbookingService.queryFlights(req.body, function(err,flightData) {
+			flightbookingService.queryFlights(req.cookies.sessionid, req.body, function(err,flightData) {
 			if (err) {
 				res.sendStatus(500);
 			}
@@ -183,7 +183,7 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 						
 		if (flightbookingService) {
 			
-			flightbookingService.bookFlights(req.body, function(err,bookingInfo) {
+			flightbookingService.bookFlights(req.cookies.sessionid, req.body, function(err,bookingInfo) {
 			if (err) {
 				res.sendStatus(500);
 			}
@@ -219,7 +219,7 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 		logger.debug('canceling booking');
 		
 		if (flightbookingService) {	
-			flightbookingService.cancelBooking(req.body, function(error) {
+			flightbookingService.cancelBooking(req.cookies.sessionid, req.body, function(error) {
 				if (error) {
 					res.send({'status':'error'});
 				}
@@ -247,7 +247,7 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 		logger.debug('listing booked flights by user ' + req.params.user);
 	
 		if (flightbookingService) {
-			flightbookingService.getBookingsByUser(req.params.user, function(err,bookings) {
+			flightbookingService.getBookingsByUser(req.cookies.sessionid, req.params.user, function(err,bookings) {
 			if (err) {
 				res.sendStatus(500);
 			}
@@ -268,12 +268,14 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 		logger.debug('getting customer by user ' + req.params.user);
 					
 		if(customerService) {
-			customerService.getCustomer(req.params.user, function(err, customer) {
+			customerService.getCustomer(req.params.user, req.cookies.sessionid, function(err, customer) {
 			if (err) {
 				res.sendStatus(500);
 			}
+			
 			res.send(customer);
 			});
+			
 			return;
 		}
 		
@@ -286,17 +288,10 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 	};
 
 	module.putCustomerById = function(req, res) {
-		logger.debug('putting customer by user ' + req.params.user);
-		
-		// Hack to get node.js code working with java code
-		req.body['className']='com.acmeair.morphia.entities.CustomerImpl';
-		req.body['status']='GOLD';
-		req.body['total_miles']=1000000;
-		req.body['miles_ytd']=1000;
-		req.body.address['className']='com.acmeair.morphia.entities.CustomerAddressImpl';		
+		logger.debug('putting customer by user ' + req.params.user);			
 		
 		if(customerService) {
-			customerService.updateCustomer(req.params.user, req.body, function(err, customer) {
+			customerService.updateCustomer(req.params.user, req.cookies.sessionid, req.body, function(err, customer) {
 			if (err) {
 				res.sendStatus(500);
 			}

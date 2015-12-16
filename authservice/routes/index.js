@@ -65,7 +65,7 @@ module.exports = function (dbtype, settings) {
 	}
 	
 	module.invalidateSessionInDB = function(sessionid, callback /* error */) {
-		logger.debug("invalidate session in DB:"+sessionid);
+		logger.info("invalidate session in DB:"+sessionid);
 	    dataaccess.remove(module.dbNames.customerSessionName,sessionid,callback) ;
 	}
 
