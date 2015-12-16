@@ -82,7 +82,7 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./routes/index.js')(dbtype, authService, customerService, flightbookingService,settings);
+var routes = new require('./routes/index.js')(dbtype, authService, settings);
 var loader = new require('./loader/loader.js')(routes, settings);
 
 // Setup express with 4.0.0
@@ -118,10 +118,10 @@ router.get('/login/logout', logout);
 
 // flight service
 if(flightbookingServiceLocation) {
-	router.post('/flights/queryflights', routes.queryflights);
-	router.post('/bookings/bookflights',  routes.bookflights);
-	router.post('/bookings/cancelbooking', routes.cancelBooking);
-	router.get('/bookings/byuser/:user',  routes.bookingsByUser);
+	router.post('/flights/queryflights', flightbookingService.queryflights);
+	router.post('/bookings/bookflights',  flightbookingService.bookflights);
+	router.post('/bookings/cancelbooking', flightbookingService.cancelBooking);
+	router.get('/bookings/byuser/:user',  flightbookingService.bookingsByUser);
 } else {
 	router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
 	router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
@@ -130,8 +130,8 @@ if(flightbookingServiceLocation) {
 }
 
 if(customerServiceLocation) {
-	router.get('/customer/byid/:user', routes.getCustomerById);
-	router.post('/customer/byid/:user',  routes.putCustomerById);
+	router.get('/customer/byid/:user', customerService.getCustomerById);
+	router.post('/customer/byid/:user', customerService.putCustomerById);
 } else {
 	router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
 	router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
@@ -188,6 +188,7 @@ function login(req, res){
 	}else
 		routes.login(req, res);
 }
+
 
 function logout(req, res){
 	if (!initialized)

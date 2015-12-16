@@ -39,7 +39,6 @@ module.exports = function (dbtype, authService, settings) {
 			sessiondid = sessionid.trim();
 		}
 		if (!sessionid || sessionid == '') {
-			logger.info('checkForValidCookie - no sessionid cookie so returning 403');
 			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
 			res.sendStatus(403);
 			return;
@@ -59,7 +58,6 @@ module.exports = function (dbtype, authService, settings) {
 				return;
 			}
 			else {
-				logger.info('checkForValidCookie - bad session so returning 403');
 				logger.debug('checkForValidCookie - bad session so returning 403');
 				res.sendStatus(403);
 				return;

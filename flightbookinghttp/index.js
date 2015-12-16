@@ -29,29 +29,57 @@ module.exports = function (settings) {
 	logger.setLevel(settings.loggerLevel);
 	   
 	
-	module.queryFlights = function(sessionid, body, callback) {
-		doPost('/flights/queryflights/',sessionid, body,function(err,result) {
-			callback(err,result);
+	module.queryflights = function(req, res) {
+		
+    	var sessionid = req.cookies.sessionid;    	
+		
+		doPost('/flights/queryflights/',sessionid, req.body, function(err,result) {
+			if (result==null) {
+				res.send(err);
+			} else {
+				res.send(result);
+			}
 		});
 	}
 	
-	module.bookFlights = function(sessionid, body, callback) {
-		doPost('/bookings/bookflights/',sessionid, body,function(err,result) {
-			callback(err,result);
+	module.bookflights = function(req, res) {
+		
+		var sessionid = req.cookies.sessionid; 
+		
+		doPost('/bookings/bookflights/',sessionid, req.body, function(err,result) {
+			if (result==null) {
+				res.send(err);
+			} else {
+				res.send(result);
+			}
 		});
 	}
 	
-	module.cancelBooking = function(sessionid, body, callback) {
-		doPost('/bookings/cancelbooking/',sessionid, body,function(err,result) {
-			logger.info(result);
-			callback(err);
+	module.cancelBooking = function(req, res) {
+		
+		var sessionid = req.cookies.sessionid; 
+		
+		doPost('/bookings/cancelbooking/',sessionid, req.body, function(err,result) {
+			if (result==null) {
+				res.send(err);
+			} else {
+				res.send(result);
+			}
 		});
 	}
 	
-	module.getBookingsByUser = function(sessionid, userid, callback) {
+	module.bookingsByUser = function(req, res) {
+		
+		var userid = req.params.user;
+		var sessionid = req.cookies.sessionid; 
+		
+		
 		doGet('/bookings/byuser/' + userid, sessionid, function(err,result) {
-			logger.info(result);
-			callback(err,result);
+			if (result==null) {
+				res.send(err);
+			} else {
+				res.send(result);
+			}
 		});
 	}
 	
@@ -59,7 +87,7 @@ module.exports = function (settings) {
     	    	
     	bodyString = querystring.stringify(body);
         
-    	logger.info("queryString:" + bodyString);
+    	logger.debug("queryString:" + bodyString);
     	
 		var path = contextRoot + restLocation;
 	    var options = {

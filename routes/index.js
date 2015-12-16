@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, authService, customerService, flightbookingService,settings) {
+module.exports = function (dbtype, authService, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -118,16 +118,6 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 	module.queryflights = function(req, res) {
 		logger.debug('querying flights');
 		
-		if (flightbookingService) {
-			flightbookingService.queryFlights(req.cookies.sessionid, req.body, function(err,flightData) {
-			if (err) {
-				res.sendStatus(500);
-			}
-				res.send(flightData);
-			});
-			return;
-		}
-		
 		var fromAirport = req.body.fromAirport;
 		var toAirport = req.body.toAirport;
 		var fromDateWeb = new Date(req.body.fromDate);
@@ -180,17 +170,6 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 
 	module.bookflights = function(req, res) {
 		logger.debug('booking flights');
-						
-		if (flightbookingService) {
-			
-			flightbookingService.bookFlights(req.cookies.sessionid, req.body, function(err,bookingInfo) {
-			if (err) {
-				res.sendStatus(500);
-			}
-				res.send(bookingInfo);
-			});
-			return;
-		}	
 		
 		var userid = req.body.userid;
 		var toFlight = req.body.toFlightId;
@@ -218,18 +197,6 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 	module.cancelBooking = function(req, res) {
 		logger.debug('canceling booking');
 		
-		if (flightbookingService) {	
-			flightbookingService.cancelBooking(req.cookies.sessionid, req.body, function(error) {
-				if (error) {
-					res.send({'status':'error'});
-				}
-				else {
-					res.send({'status':'success'});
-				}
-			});
-			return;
-		}
-		
 		var number = req.body.number;
 		var userid = req.body.userid;
 		
@@ -245,16 +212,6 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 
 	module.bookingsByUser = function(req, res) {
 		logger.debug('listing booked flights by user ' + req.params.user);
-	
-		if (flightbookingService) {
-			flightbookingService.getBookingsByUser(req.cookies.sessionid, req.params.user, function(err,bookings) {
-			if (err) {
-				res.sendStatus(500);
-			}
-				res.send(bookings);
-			});
-			return
-		}
 		
 		getBookingsByUser(req.params.user, function(err, bookings) {
 			if (err) {
@@ -265,20 +222,8 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 	};
 
 	module.getCustomerById = function(req, res) {
-		logger.debug('getting customer by user ' + req.params.user);
-					
-		if(customerService) {
-			customerService.getCustomer(req.params.user, req.cookies.sessionid, function(err, customer) {
-			if (err) {
-				res.sendStatus(500);
-			}
-			
-			res.send(customer);
-			});
-			
-			return;
-		}
-		
+		logger.debug('getting customer by user ' + req.params.user);		
+				
 		getCustomer(req.params.user, function(err, customer) {
 		if (err) {
 			res.sendStatus(500);
@@ -289,16 +234,6 @@ module.exports = function (dbtype, authService, customerService, flightbookingSe
 
 	module.putCustomerById = function(req, res) {
 		logger.debug('putting customer by user ' + req.params.user);			
-		
-		if(customerService) {
-			customerService.updateCustomer(req.params.user, req.cookies.sessionid, req.body, function(err, customer) {
-			if (err) {
-				res.sendStatus(500);
-			}
-			res.send(customer);
-			});
-			return;
-		}
 		
 		updateCustomer(req.params.user, req.body, function(err, customer) {
 			if (err) {

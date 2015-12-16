@@ -27,9 +27,10 @@ module.exports = function (settings) {
 	var logger = log4js.getLogger('customerhttp');
 	logger.setLevel(settings.loggerLevel);
 	
-    module.getCustomer = function (userid, sessionid, callback /* (error, userid) */){
+	module.getCustomerById = function(req, res) {
 
-    	    	
+    	var userid = req.params.user;
+    	var sessionid = req.cookies.sessionid;    	
 		var path = contextRoot+"/customer/byid/" + userid;
 	     	var options = {
 			hostname: hostAndPort[0],
@@ -43,33 +44,36 @@ module.exports = function (settings) {
 	     		
 	    }
 	
-	    logger.info('getCustomer request:'+JSON.stringify(options));
+	    logger.debug('getCustomer request:'+JSON.stringify(options));
 	
 	    var request = http.request(options, function(response){
 	      		var data='';
 	      		response.setEncoding('utf8');
 	      		response.on('data', function (chunk) {
-	      		  logger.info('getCustomer chunk:'+chunk);
+	      		  logger.debug('getCustomer chunk:'+chunk);
 		   			data +=chunk;
 	      		});
 	      		 response.on('end', function(){
 	 			 	if (response.statusCode>=400)
-	 				   callback("StatusCode:"+ response.statusCode+",Body:"+data, null);
+	 			 		res.sendStatus(response.statusCode);
 	 			   	else{
-	 					callback(null, data);
+	 			   		res.send(data);
 	 	            }
 	        	})
 	    });
 	    request.on('error', function(e) {
-	   			callback('problem with request: ' + e.message, null);
+	    	res.sendStatus(500);
 	    });
 	   	request.end();
 	}
    
    
-    module.updateCustomer = function (userid, sessionid, customer, callback /* (error, userid) */){
+    module.putCustomerById = function (req, res/* (error, userid) */){
+    	
+		var userid = req.params.user;
+    	var sessionid = req.cookies.sessionid;    	
     	    	
-    	customerData = JSON.stringify(customer);
+    	customerData = JSON.stringify(req.body);
     	
 		var path = contextRoot+"/customer/byid/" + userid;
 	    var options = {
@@ -94,14 +98,14 @@ module.exports = function (settings) {
 	      		});
 	      		 response.on('end', function(){
 	 			 	if (response.statusCode>=400)
-	 				   callback("StatusCode:"+ response.statusCode+",Body:"+data, null);
+	 			 		res.sendStatus(response.statusCode);
 	 			   	else{
-	 					callback(null, data);
+	 			   		res.send(data);
 	 	            }
 	        	})
 	    });
 	    request.on('error', function(e) {
-	   			callback('problem with request: ' + e.message, null);
+	    	res.sendStatus(500);
 	    });
 	    request.write(customerData);
 	   	request.end();

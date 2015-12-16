@@ -115,9 +115,7 @@ module.exports = function (dbtype, authService,settings) {
 	};
 
 	module.cancelBooking = function(req, res) {
-		logger.info('canceling booking');	
-		logger.info(req.body);
-		
+				
 		var number = req.body.number;
 		var userid = req.body.userid;
 		
@@ -138,7 +136,7 @@ module.exports = function (dbtype, authService,settings) {
 			if (err) {
 				res.sendStatus(500);
 			}
-			logger.info(bookings);
+			
 			res.send(bookings);
 		});
 	};
@@ -154,7 +152,6 @@ module.exports = function (dbtype, authService,settings) {
 			sessiondid = sessionid.trim();
 		}
 		if (!sessionid || sessionid == '') {
-			logger.info('checkForValidCookie - no sessionid cookie so returning 403');
 			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
 			res.sendStatus(403);
 			return;
@@ -174,7 +171,6 @@ module.exports = function (dbtype, authService,settings) {
 				return;
 			}
 			else {
-				logger.info('checkForValidCookie - bad session so returning 403');
 				logger.debug('checkForValidCookie - bad session so returning 403');
 				res.sendStatus(403);
 				return;
