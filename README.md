@@ -52,12 +52,16 @@ Assume MongoDB started on 127.0.0.1:27017
 ### Run Acmeair in Micro-Service on Local
 	
 	node authservice-app.js
+	
+	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
 	node customerservice_app.js	
+	
+	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
 	node flightbookingservice_app.js
 	
 	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
-	set CUSTOMER_SERVICE=localhost:9443 or export CUSTOMER_SERVICE=localhost:9443
-	set FLIGHTBOOKING_SERVICE=localhost:9443 or export FLIGHTBOOKING_SERVICE=localhost:9443
+	set CUSTOMER_SERVICE=localhost:9081 or export CUSTOMER_SERVICE=localhost:9081
+	set FLIGHTBOOKING_SERVICE=localhost:9082 or export FLIGHTBOOKING_SERVICE=localhost:9082
 	node app.js
 	
 ### Run Acmeair in Micro-Service with Netflix Hystrix Stream enabled on Local
