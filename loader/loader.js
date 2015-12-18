@@ -23,6 +23,7 @@ module.exports = function (loadUtil,settings) {
 	var async = require('async');
 	var fs = require('fs');
 	
+	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('loader');
 	logger.setLevel(settings.loggerLevel);
 

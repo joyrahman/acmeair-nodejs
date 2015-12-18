@@ -23,6 +23,7 @@ module.exports = function (dbtype, authService, settings) {
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
 	
+	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('routes');
 	logger.setLevel(settings.loggerLevel);
 

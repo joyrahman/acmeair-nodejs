@@ -18,7 +18,8 @@ module.exports = function (dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
-	
+
+	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('authservice/routes');
 	logger.setLevel(settings.loggerLevel);
 
