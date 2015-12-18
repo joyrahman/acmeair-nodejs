@@ -44,6 +44,7 @@ Assume MongoDB started on 127.0.0.1:27017
 ### Resolve module dependencies
 
 	npm install
+	node_modules/.bin/npm install 
 
 ### Run Acmeair in Monolithic on Local
 
@@ -51,7 +52,7 @@ Assume MongoDB started on 127.0.0.1:27017
 
 ### Run Acmeair in Micro-Service on Local
 	
-	node authservice-app.js
+	node authservice_app.js
 	
 	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
 	node customerservice_app.js	
@@ -67,7 +68,7 @@ Assume MongoDB started on 127.0.0.1:27017
 ### Run Acmeair in Micro-Service with Netflix Hystrix Stream enabled on Local
 
 	
-	node authservice-app.js
+	node authservice_app.js
 	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
 	set enableHystrix=true or export enableHystrix=true
 	
@@ -151,9 +152,4 @@ MAX_FLIGHTS_PER_DAY | 1 | max flights per day
 * Create a folder under dataaccess with the new dbtype name. Look at current implementation for reference.
 
 
-### Data consistency with Acmeair Java
-
-The data format is NOT the same as Acmeair Java. The impact:
-
-* You can not share database with Acmeair Java. 
 * When drive acmeair workload, you need follow the [instruction](https://github.com/acmeair/acmeair/wiki/jMeter-Workload-Instructions) to use -DusePureIDs=true when starting jmeter.
