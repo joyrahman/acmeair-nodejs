@@ -1,0 +1,17 @@
+{
+  "appenders": [
+    {
+      "type": "file",
+      "filename": "acmeair_node.log",
+      "maxLogSize": 20480,
+      "backups": 3,
+      "category": "app"
+    },{
+        "type": "file",
+        "filename": "acmeair_node.log",
+        "maxLogSize": 20480,
+        "backups": 3,
+        "category": "routes"
+      }
+  ]
+}
