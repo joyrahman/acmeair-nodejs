@@ -1,16 +1,21 @@
 {
-	"port":9080,
+	"monolithic_port":9085,
+	"monolithicContextRoot": "/acmeair-monolithic/rest/api",	
 		
-	"contextRoot": "/rest/api",
+	"main_port":9080,
+	"mainContextRoot": "/acmeair/rest/api",
 		
-	"authservice_port": 9443,
+	"authservice_port": 9083,
 	"authContextRoot": "/acmeair-as/rest/api",
 		
 	"customerservice_port": 9081,
 	"customerContextRoot": "/acmeair-cs/rest/api",
 	
-	"flightbookingservice_port": 9082,
-	"flightbookingContextRoot": "/acmeair-fbs/rest/api",
+	"flightservice_port": 9082,
+	"flightContextRoot": "/acmeair-fs/rest/api",
+	
+	"bookingservice_port": 9084,
+	"bookingContextRoot": "/acmeair-bs/rest/api",
 		
 	"mongoHost" : "127.0.0.1",
 	"mongoPort" : 27017,

@@ -20,8 +20,8 @@ var express = require('express')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 
-
-var logger = log4js.getLogger('flightbookingervice_app');
+log4js.configure('log4js.json', {});
+var logger = log4js.getLogger('flightservice_app');
 logger.setLevel(settings.loggerLevel);
 
 

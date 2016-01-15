@@ -49,7 +49,7 @@
 		    	var grid, store, dataStore;
 		    	
 		    	dojo.xhrGet({
-					url: "/rest/api/bookings/byuser/" + dojo.cookie("loggedinuser"),
+					url: window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) + "/rest/api/bookings/byuser/" + dojo.cookie("loggedinuser"),
 					handleAs: "json",
 					load: function(response, ioArgs) {
 						var theData = { items : response };
@@ -159,7 +159,7 @@
 				
 				dojo.xhrPost({
 					content : xhrContent,
-					url : '/rest/api/bookings/cancelbooking',
+					url : window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) + '/rest/api/bookings/cancelbooking',
 					load : function(response, ioArgs) {
 						alert("Booking Canceled.");
 						createAndStartGrid();
