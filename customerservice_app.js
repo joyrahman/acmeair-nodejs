@@ -20,7 +20,7 @@ var express = require('express')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 
-log4js.configure('log4js.json', {});
+
 var logger = log4js.getLogger('customerservice_app');
 logger.setLevel(settings.loggerLevel);
 
@@ -33,25 +33,6 @@ var acceptedOrigin = (process.env.MAIN_SERVICE || 'localhost:9080');
 logger.info("host:port=="+host+":"+port);
 
 //Running customerservice, so assume authservice is running also
-var authService;
-
-var authServiceLocation = process.env.AUTH_SERVICE;
-if (authServiceLocation) 
-{
-	logger.info("Use authservice:" + authServiceLocation);
-	var authModule;
-	if (authServiceLocation.indexOf(":")>0) // This is to use micro services
-		authModule = "acmeairhttp";
-	else
-		authModule= authServiceLocation;
-	
-	authService = new require('./'+authModule+'/index.js')(settings);
-	if (authService && "true"==process.env.enableHystrix) // wrap into command pattern
-	{
-		logger.info("Enabled Hystrix");
-		authService = new require('./acmeaircmd/index.js')(authService, settings);
-	}
-}
 
 var dbtype = process.env.dbtype || "mongo";
 
@@ -96,32 +77,12 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
-
-var authService;
-var authServiceLocation = process.env.AUTH_SERVICE;
-
-if (authServiceLocation) 
-{
-	logger.info("Use authservice:"+authServiceLocation);
-	var authModule;
-	if (authServiceLocation.indexOf(":")>0) // This is to use micro services
-		authModule = "acmeairhttp";
-	else
-		authModule= authServiceLocation;
-	
-	authService = new require('./'+authModule+'/index.js')(settings);
-	if (authService && "true"==process.env.enableHystrix) // wrap into command pattern
-	{
-		logger.info("Enabled Hystrix");
-		authService = new require('./acmeaircmd/index.js')(authService, settings);
-	}
-}
-
 var router = express.Router(); 				
-var routes = new require('./customerservice/routes/index.js')(dbtype,authService,settings); 
+var routes = new require('./customerservice/routes/index.js')(dbtype, settings); 
 
 router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
 router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+router.post('/customer/validateid', routes.validateId);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.customerContextRoot, router);

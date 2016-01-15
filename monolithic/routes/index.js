@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, authService, settings) {
+module.exports = function (dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -23,11 +23,10 @@ module.exports = function (dbtype, authService, settings) {
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
 	
-	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('routes');
 	logger.setLevel(settings.loggerLevel);
 
-	var daModuleName = "../dataaccess/"+dbtype+"/index.js";
+	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
 	var dataaccess = new require(daModuleName)(settings);
 	
@@ -75,10 +74,12 @@ module.exports = function (dbtype, authService, settings) {
 	}
 
 	module.login = function(req, res) {
-		logger.debug('logging in user');
+		
 		var login = req.body.login;
 		var password = req.body.password;
 	
+		logger.debug('logging in user' + login);
+
 		res.cookie('sessionid', '');
 		
 		// replace eventually with call to business logic to validate customer
@@ -345,23 +346,23 @@ module.exports = function (dbtype, authService, settings) {
 
 	function validateCustomer(username, password, callback /* (error, boolean validCustomer) */) {
 		dataaccess.findOne(module.dbNames.customerName, username, function(error, customer){
-				if (error) callback (error, null);
+			
+				if (error) {
+					callback (error, null);
+				}
 				else{
 	                if (customer)
 	                {
 	                	callback(null, customer.password == password);
 	                }
-	                else
-	                	callback(null, false)
+	                else {
+	                	callback(null, false);
+	                }
 				}
 		});
 	};
 
 	function createSession(customerId, callback /* (error, sessionId) */) {
-		if (authService){
-			authService.createSession(customerId,callback);
-			return;
-		}
 		var now = new Date();
 		var later = new Date(now.getTime() + 1000*60*60*24);
 			
@@ -374,10 +375,6 @@ module.exports = function (dbtype, authService, settings) {
 	}
 
 	function validateSession(sessionId, callback /* (error, userid) */) {
-		if (authService){
-		     authService.validateSession(sessionId,callback);
-		     return;
-		}
 		var now = new Date();
 			
 	    dataaccess.findOne(module.dbNames.customerSessionName, sessionId, function(err, session) {
@@ -409,11 +406,6 @@ module.exports = function (dbtype, authService, settings) {
 	}
 
 	function invalidateSession(sessionid, callback /* error */) {
-		if (authService){
-			authService.invalidateSession(sessionid,callback);
-		    return;
-		}
-		  
 	    dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) 
 	}
 

@@ -14,12 +14,11 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, authService, settings) {
+module.exports = function (dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
-
-	log4js.configure('log4js.json', {});
+	
 	var logger = log4js.getLogger('customerservice/routes');
 	logger.setLevel(settings.loggerLevel);
 
@@ -32,6 +31,30 @@ module.exports = function (dbtype, authService, settings) {
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
+	
+	// auth service setup code ****
+	var http = require('http')
+    
+    // Place holder for service registry/discovery code
+	var location = process.env.AUTH_SERVICE || "localhost/acmeair";
+	var host;
+	var post;
+	var contextRoot;
+    
+	if (location.indexOf(":") > -1) {
+		var split1 = location.split(":");
+		host=split1[0];
+		
+		var split2 = split1.split("/");
+		port = split2[0];
+		authContextRoot = '/' + split2[1];
+	} else {
+		var split1 = location.split("/");
+		host=split1[0];
+		authContextRoot = '/' + split1[1];
+		port=80;
+	}
+	// *****
 	
 	module.checkForValidSessionCookie = function(req, res, next) {
 		logger.debug('checkForValidCookie');
@@ -67,8 +90,37 @@ module.exports = function (dbtype, authService, settings) {
 	}
 	
 	function validateSession(sessionId, callback /* (error, userid) */) {
-		authService.validateSession(sessionId,callback);
-		return;
+		var path = authContextRoot + "/rest/api/login/authcheck/" + sessionId;
+     	var options = {
+		hostname: host,
+	 	port: port,
+	    	path: path,
+	    	method: "GET",
+	    	headers: {
+	    	      'Content-Type': 'application/json'
+	    	}
+     	}
+
+    	logger.debug('validateSession request:'+JSON.stringify(options));
+
+     	var request = http.request(options, function(response){
+      		var data='';
+      		response.setEncoding('utf8');
+      		response.on('data', function (chunk) {
+	   			data +=chunk;
+      		});
+       		response.on('end', function(){
+       			if (response.statusCode>=400)
+       				callback("StatusCode:"+ response.statusCode+",Body:"+data,null);
+       			else
+       				callback(null, JSON.parse(data).customerid);
+        	})
+     	});
+     	request.on('error', function(e) {
+   			callback('problem with request: ' + e.message, null);
+     	});
+     	request.end();
+		
 	}
 
 	module.getCustomerById = function(req, res) {
@@ -80,6 +132,21 @@ module.exports = function (dbtype, authService, settings) {
 			}
 			
 			res.send(customer);
+		});
+	};
+	
+	module.validateId = function(req, res) {
+		logger.info('verifying password for ' + req.body.login);
+		getCustomer(req.body.login, function(err, customer) {
+			if (err) {
+				res.sendStatus(500);
+			}
+			logger.info(customer);
+			if (req.body.password == customer.password) {
+				res.send('{"validCustomer":"true"}');
+			} else {
+					res.send('{"validCustomer":"false"}');
+			}
 		});
 	};
 	

@@ -20,54 +20,14 @@ var express = require('express')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 
-log4js.configure('log4js.json', {});
 var logger = log4js.getLogger('app');
 logger.setLevel(settings.loggerLevel);
 
 // disable process.env.PORT for now as it cause problem on mesos slave
-var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.port);
+var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.main_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
-
-var authService;
-var authServiceLocation = process.env.AUTH_SERVICE;
-
-var customerService;
-var customerServiceLocation = process.env.CUSTOMER_SERVICE;
-
-var flightbookingService;
-var flightbookingServiceLocation = process.env.FLIGHTBOOKING_SERVICE;
-
-
-if (authServiceLocation) 
-{
-	logger.info("Use authservice:"+authServiceLocation);
-	var authModule;
-	if (authServiceLocation.indexOf(":")>0) // This is to use micro services
-		authModule = "acmeairhttp";
-	else
-		authModule= authServiceLocation;
-	
-	authService = new require('./'+authModule+'/index.js')(settings);
-	if (authService && "true"==process.env.enableHystrix) // wrap into command pattern
-	{
-		logger.info("Enabled Hystrix");
-		authService = new require('./acmeaircmd/index.js')(authService, settings);
-	}
-}
-
-if(customerServiceLocation) 
-{
-	logger.info("Use customerservice:"+customerServiceLocation);
-	customerService = new require('./customerhttp/index.js')(settings);
-}
-
-if(flightbookingServiceLocation) 
-{
-	logger.info("Use flightbookingservice:"+flightbookingServiceLocation);
-	flightbookingService = new require('./flightbookinghttp/index.js')(settings);
-}
 
 var dbtype = process.env.dbtype || "mongo";
 
@@ -83,7 +43,7 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./routes/index.js')(dbtype, authService, settings);
+var routes = new require('./main/routes/index.js')(dbtype, settings);
 var loader = new require('./loader/loader.js')(routes, settings);
 
 // Setup express with 4.0.0
@@ -94,7 +54,8 @@ var bodyParser     = require('body-parser');
 var methodOverride = require('method-override');
 var cookieParser = require('cookie-parser')
 
-app.use(express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
+app.use('/acmeair',express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
+
 if (settings.useDevLogger)
 	app.use(morgan('dev'));                     		// log every request to the console
 
@@ -113,32 +74,7 @@ app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 		
 
-// main app
-router.post('/login', login);
-router.get('/login/logout', logout);
-
-// flight service
-if(flightbookingServiceLocation) {
-	router.post('/flights/queryflights', flightbookingService.queryflights);
-	router.post('/bookings/bookflights',  flightbookingService.bookflights);
-	router.post('/bookings/cancelbooking', flightbookingService.cancelBooking);
-	router.get('/bookings/byuser/:user',  flightbookingService.bookingsByUser);
-} else {
-	router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
-	router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
-	router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
-	router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
-}
-
-if(customerServiceLocation) {
-	router.get('/customer/byid/:user', customerService.getCustomerById);
-	router.post('/customer/byid/:user', customerService.putCustomerById);
-} else {
-	router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
-	router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
-}
-
-// probably main app?
+// config/load
 router.get('/config/runtime', routes.getRuntimeInfo);
 router.get('/config/dataServices', routes.getDataServiceInfo);
 router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
@@ -148,59 +84,25 @@ router.get('/config/countSessions', routes.countCustomerSessions);
 router.get('/config/countFlights', routes.countFlights);
 router.get('/config/countFlightSegments', routes.countFlightSegments);
 router.get('/config/countAirports' , routes.countAirports);
-//router.get('/loaddb', startLoadDatabase);
 router.get('/loader/load', startLoadDatabase);
 router.get('/loader/query', loader.getNumConfiguredCustomers);
 
 // ?
 router.get('/checkstatus', checkStatus);
 
-if (authService && authService.hystrixStream)
-	app.get('/rest/api/hystrix.stream', authService.hystrixStream);
-
-
 //REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.contextRoot, router);
+app.use(settings.mainContextRoot, router);
 
 // Only initialize DB after initialization of the authService is done
 var initialized = false;
 var serverStarted = false;
 
-if (authService && authService.initialize)
-{
-	authService.initialize(function(){
-		initDB();
-	});
-}
-else
-	initDB();
+initDB(); // only used for config/load
 
 
 function checkStatus(req, res){
 	res.sendStatus(200);
 }
-
-function login(req, res){
-	if (!initialized)
-     {
-		logger.info("please wait for db connection initialized then trigger again.");
-		initDB();
-		res.sendStatus(403);
-	}else
-		routes.login(req, res);
-}
-
-
-function logout(req, res){
-	if (!initialized)
-     {
-		logger.info("please wait for db connection initialized then trigger again.");
-		initDB();
-		res.sendStatus(400);
-	}else
-		routes.logout(req, res);
-}
-
 
 function startLoadDatabase(req, res){
 	if (!initialized)

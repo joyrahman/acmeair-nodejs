@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, authService,settings) {
+module.exports = function (dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -22,7 +22,6 @@ module.exports = function (dbtype, authService,settings) {
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
 	
-	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('flightbookingservice/routes');
 	logger.setLevel(settings.loggerLevel);
 
@@ -89,104 +88,12 @@ module.exports = function (dbtype, authService,settings) {
 		});
 	};
 
-	module.bookflights = function(req, res) {
-		logger.debug('booking flights');
-		
-		var userid = req.body.userid;
-		var toFlight = req.body.toFlightId;
-		var retFlight = req.body.retFlightId;
-		var oneWay = (req.body.oneWayFlight == 'true');
-		
-		logger.debug("toFlight:"+toFlight+",retFlight:"+retFlight);
-		
-		bookFlight(toFlight, userid, function (error, toBookingId) {
-			if (!oneWay) {
-				bookFlight(retFlight, userid, function (error, retBookingId) {
-					var bookingInfo = {"oneWay":false,"returnBookingId":retBookingId,"departBookingId":toBookingId};
-					res.header('Cache-Control', 'no-cache');
-					res.send(bookingInfo);
-				});
-			}
-			else {
-				var bookingInfo = {"oneWay":true,"departBookingId":toBookingId};
-				res.header('Cache-Control', 'no-cache');
-				res.send(bookingInfo);
-			}
-		});
-	};
-
-	module.cancelBooking = function(req, res) {
-				
-		var number = req.body.number;
-		var userid = req.body.userid;
-		
-		cancelBooking(number, userid, function (error) {
-			if (error) {
-				res.send({'status':'error'});
-			}
-			else {
-				res.send({'status':'success'});
-			}
-		});
-	};
-
-	module.bookingsByUser = function(req, res) {
-		logger.debug('listing booked flights by user ' + req.params.user);
 	
-		getBookingsByUser(req.params.user, function(err, bookings) {
-			if (err) {
-				res.sendStatus(500);
-			}
-			
-			res.send(bookings);
-		});
-	};
 	
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
 	
-	module.checkForValidSessionCookie = function(req, res, next) {
-		logger.debug('checkForValidCookie');
-		var sessionid = req.cookies.sessionid;
-		if (sessionid) {
-			sessiondid = sessionid.trim();
-		}
-		if (!sessionid || sessionid == '') {
-			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
-			res.sendStatus(403);
-			return;
-		}
-	
-		validateSession(sessionid, function(err, customerid) {
-			if (err) {
-				logger.debug('checkForValidCookie - system error validating session so returning 500');
-				res.sendStatus(500);
-				return;
-			}
-			
-			if (customerid) {
-				logger.debug('checkForValidCookie - good session so allowing next route handler to be called');
-				req.acmeair_login_user = customerid;
-				next();
-				return;
-			}
-			else {
-				logger.debug('checkForValidCookie - bad session so returning 403');
-				res.sendStatus(403);
-				return;
-			}
-		});
-	}
-	
-	function validateSession(sessionId, callback /* (error, userid) */) {
-		authService.validateSession(sessionId,callback);
-		return;
-	}
-	
-	function getBookingsByUser(username, callback /* (error, Bookings) */) {
-		dataaccess.findBy(module.dbNames.bookingName, {'customerId':username},callback)
-	}
 	
 	function getFlightByAirportsAndDepartureDate(fromAirport, toAirport, flightDate, callback /* error, flightSegment, flights[] */) {
 		logger.debug("getFlightByAirportsAndDepartureDate " + fromAirport + " " + toAirport + " " + flightDate);
@@ -266,25 +173,6 @@ module.exports = function (dbtype, authService,settings) {
 			}
 		});
 	}
-
-
-	function bookFlight(flightId, userid, callback /* (error, bookingId) */) {
-			
-		var now = new Date();
-		var docId = uuid.v4();
-	
-		var document = { "_id" : docId, "customerId" : userid, "flightId" : flightId, "dateOfBooking" : now,  "bookingId" : docId };
-		
-		dataaccess.insertOne(module.dbNames.bookingName,document,function(err){
-			callback(err, docId);
-		});
-	}
-
-	function cancelBooking(bookingid, userid, callback /*(error)*/) {
-		dataaccess.remove(module.dbNames.bookingName,{'_id':bookingid, 'customerId':userid}, callback)
-	}
-
-
 
 	return module;
 }

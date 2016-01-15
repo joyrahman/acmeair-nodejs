@@ -14,13 +14,18 @@
 * limitations under the License.
 *******************************************************************************/
 
-var fs = require('fs');
+var express = require('express')
+  , http = require('http')
+  , fs = require('fs')
+  , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
-var log4js = require('log4js');
-var logger = log4js.getLogger('authservice_app');
+
+
+var logger = log4js.getLogger('flightbookingervice_app');
 logger.setLevel(settings.loggerLevel);
 
-var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.authservice_port);
+
+var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.bookingservice_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
@@ -39,17 +44,19 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./authservice/routes/index.js')(dbtype,settings); 
+
 
 // call the packages we need
 var express    = require('express'); 		
 var app        = express(); 				
 var morgan         = require('morgan');
-var bodyParser     = require('body-parser');
-var cookieParser = require('cookie-parser');
 
 if (settings.useDevLogger)
 	app.use(morgan('dev'));                     		// log every request to the console
+
+var bodyParser     = require('body-parser');
+var methodOverride = require('method-override');
+var cookieParser = require('cookie-parser')
 
 //create application/json parser
 var jsonParser = bodyParser.json();
@@ -58,20 +65,21 @@ var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 app.use(jsonParser);
 app.use(urlencodedParser);
-
 //parse an HTML body into a string
 app.use(bodyParser.text({ type: 'text/html' }));
-app.use(cookieParser()); 
 
-var router = express.Router(); 		
+app.use(methodOverride());                  			// simulate DELETE and PUT
+app.use(cookieParser());                  				// parse cookie
 
-router.post('/login', routes.login);
-router.get('/login/logout', routes.logout);
-router.get('/login/authcheck/:tokenid', routes.authcheck);
+var router = express.Router(); 	
+var routes = new require('./bookingservice/routes/index.js')(dbtype, settings); 
 
+router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
+router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
+router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.authContextRoot, router);
+app.use(settings.bookingContextRoot, router);
 
 var initialized = false;
 var serverStarted = false;
@@ -101,6 +109,14 @@ function startServer() {
 	app.listen(port);
 	console.log('Application started port ' + port);
 }
+
+function checkStatus(req, res){
+	res.sendStatus(200);
+}
+
+
+
+
 
 
 

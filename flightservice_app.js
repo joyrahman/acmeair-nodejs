@@ -20,36 +20,15 @@ var express = require('express')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 
-log4js.configure('log4js.json', {});
+
 var logger = log4js.getLogger('flightbookingervice_app');
 logger.setLevel(settings.loggerLevel);
 
 
-var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.flightbookingservice_port);
+var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.flightservice_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
-
-//Running customerservice, so assume authservice is running also
-var authService;
-
-var authServiceLocation = process.env.AUTH_SERVICE;
-if (authServiceLocation) 
-{
-	logger.info("Use authservice:" + authServiceLocation);
-	var authModule;
-	if (authServiceLocation.indexOf(":")>0) // This is to use micro services
-		authModule = "acmeairhttp";
-	else
-		authModule= authServiceLocation;
-	
-	authService = new require('./'+authModule+'/index.js')(settings);
-	if (authService && "true"==process.env.enableHystrix) // wrap into command pattern
-	{
-		logger.info("Enabled Hystrix");
-		authService = new require('./acmeaircmd/index.js')(authService, settings);
-	}
-}
 
 var dbtype = process.env.dbtype || "mongo";
 
@@ -64,8 +43,6 @@ if(process.env.VCAP_SERVICES){
 		dbtype="redis";
 }
 logger.info("db type=="+dbtype);
-
-
 
 // call the packages we need
 var express    = require('express'); 		
@@ -93,15 +70,12 @@ app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 	
-var routes = new require('./flightbookingservice/routes/index.js')(dbtype,authService, settings); 
+var routes = new require('./flightservice/routes/index.js')(dbtype, settings); 
 
-router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
-router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
-router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
-router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+router.post('/flights/queryflights', routes.queryflights);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.flightbookingContextRoot, router);
+app.use(settings.flightContextRoot, router);
 
 var initialized = false;
 var serverStarted = false;
