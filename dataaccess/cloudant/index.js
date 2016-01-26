@@ -115,6 +115,7 @@ module.exports = function (settings) {
     				if(itemsProcessed === Object.keys(module.dbNames).length) {
     				  nano.db.list(function(err, body) {
     				    // body is an array
+    					  console.log("List all the Cloudant DB");
     				    body.forEach(function(db) {
     				      console.log(db);
     				    });
