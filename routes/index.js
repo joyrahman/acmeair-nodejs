@@ -37,6 +37,10 @@ module.exports = function (dbtype, authService, settings) {
 		dataaccess.initializeDatabaseConnections(callback)
 	}
 
+    module.initialize = function (callback) {
+    	dataaccess.initialize(callback);
+	};
+	
 	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
 		dataaccess.insertOne(collectionname, doc, callback)
 	};

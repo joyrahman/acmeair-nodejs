@@ -136,6 +136,11 @@ module.exports = function (settings) {
 	        });
 	}
 
+    module.initialize = function (callback) {
+    	//TODO : Delete DB
+    	callback();
+	};
+	
 	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
 		dbclient.collection(collectionname,function(error, collection){
 			  if (error){

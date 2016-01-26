@@ -81,6 +81,11 @@ module.exports = function (settings) {
 		});
 	}
 
+    module.initialize = function (callback) {
+    	//TODO : Delete DB & create DB if necessary
+    	callback();
+	};
+	
 	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
 		dbclient.execute(upsertStmt[collectionname], getUpsertParam(collectionname,doc), {prepare: true}, function(err) {
 			  if (err) {callback(err, null);}

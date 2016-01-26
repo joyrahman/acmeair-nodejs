@@ -129,16 +129,14 @@ module.exports = function (loadUtil,settings) {
 	}
 
 	module.startLoadDatabase = function startLoadDatabase(req, res) {
-		if (customers.length>=1)
-	      {
-			res.send('Already loaded');
-			return;
-	      }
+		
 		var numCustomers = req.query.numCustomers;
 		if(numCustomers === undefined) {
 			numCustomers = loaderSettings.MAX_CUSTOMERS;
 		}
-		logger.info('starting loading database');
+		loadUtil.initialize(function() {
+		  logger.info('DB initialized');
+		  logger.info('starting loading database');
 			createCustomers(numCustomers);
 			createFlightRelatedData(function() {
 				logger.info('number of customers = ' + customers.length);
@@ -152,6 +150,7 @@ module.exports = function (loadUtil,settings) {
 				};
 				customerQueue.push(customers);
 			});
+		  });
 		//res.send('Trigger DB loading');
 	}
 	
