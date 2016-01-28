@@ -217,9 +217,16 @@ module.exports = function (settings) {
 		return docs;
 	}
 
-	//TODO Implement count method for cloudant -- currently a stub returning -1
 	module.count = function(collectionname, condition, callback/* (error, docs) */) {
-		callback(null, -1);
+		nano.db.get(collectionname,function(err, body){
+          if (err){
+			logger.error("count hit error:"+err);
+			callback(err, -1);
+		  }
+		  else{
+            callback(null, body.doc_count);
+		  }
+        });
 	};
 	
 	return module;
