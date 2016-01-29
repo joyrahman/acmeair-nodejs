@@ -137,9 +137,19 @@ module.exports = function (settings) {
 	}
 
     module.initialize = function (callback) {
-    	//TODO : Delete DB
-    	callback();
-	};
+    	var itemsProcessed = 0;
+        for(var dbName in module.dbNames){
+            (function(tempDbName){
+                dbclient.dropCollection(tempDbName, function() {
+   				  itemsProcessed++;
+  				  if(itemsProcessed === Object.keys(module.dbNames).length) {
+  					logger.info("Processing callback");
+					callback();
+  				  }   
+                });
+             })(module.dbNames[dbName]);
+        }
+    };
 	
 	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
 		dbclient.collection(collectionname,function(error, collection){
