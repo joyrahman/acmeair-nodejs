@@ -1,9 +1,9 @@
 {
-  "name": "acmeair",
+  "name": "acmeair-node",
   "version": "0.0.4",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "start": "node monolithic_app.js"
   },
   "dependencies": {
     "async":    "0.2.x",

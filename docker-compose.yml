@@ -1,0 +1,27 @@
+db:
+  image: mongo
+  ports:
+    - 27017:27017
+
+nginx:
+  restart: always
+  build: ./nginx/
+  ports:
+    - "80:80"
+  volumes:
+    - /www/public
+  volumes_from:
+    - web
+  links:
+    - web:web
+
+web:
+  build: .
+  volumes:
+    - "./:/src/"
+  ports:
+    - "9080:9080"
+    - "9081:9081"
+    - "9082:9082"
+    - "9083:9083"
+    - "9084:9084"

@@ -1,0 +1,45 @@
+
+	upstream mainservices {
+    	server 192.168.99.100:9080;  
+	}
+	
+	upstream authservices {
+    	server 192.168.99.100:9083;
+ 
+	}
+	upstream customerservices {
+    	server 192.168.99.100:9081;
+ 
+	}
+	upstream flightservices {
+    	server 192.168.99.100:9082;
+ 
+	}
+	upstream bookingservices {
+    	server 192.168.99.100:9084;
+ 
+	}
+	
+	server {
+		location  /acmeair/rest/api/login {
+			proxy_pass http://authservices/acmeair-as/rest/api/login;
+		}
+	
+		location /acmeair {
+			proxy_pass http://mainservices/acmeair;
+		}
+
+		location /acmeair/rest/api/customer {
+			proxy_pass http://customerservices/acmeair-cs/rest/api/customer;
+		}
+	
+		location /acmeair/rest/api/bookings {
+			proxy_pass http://bookingservices/acmeair-bs/rest/api/bookings;
+		}
+	
+		location /acmeair/rest/api/flights {
+			proxy_pass http://flightservices/acmeair-fs/rest/api/flights;
+		}
+	
+		
+	}
