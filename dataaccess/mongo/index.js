@@ -29,7 +29,7 @@ module.exports = function (settings) {
 	var mongodb = require('mongodb');
 	var log4js = require('log4js');
 	
-	log4js.configure('log4js.json', {});
+	//log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('dataaccess/mongo');
 	logger.setLevel(settings.loggerLevel);
 
@@ -74,8 +74,9 @@ module.exports = function (settings) {
 		}
 		// Default to read from settings file
 		if (mongo==null) {
+			logger.info("help!");
 		    mongo = {
-		    "hostname": settings.mongoHost,
+		    "hostname": process.env.MONGO_HOST || settings.mongoHost,
 		    "port": settings.mongoPort,
 		    "username":"",
 		    "password":"",
@@ -219,7 +220,7 @@ module.exports = function (settings) {
 	module.count = function(collectionname, condition, callback/* (error, docs) */) {
 		dbclient.collection(collectionname,function(error, collection){
 			  if (error){
-				  logger.error("count hit error:"+error);
+				  logger.info("count hit error:"+error);
 				  callback(error, null);
 			  }
 			  else{

@@ -11,17 +11,54 @@ nginx:
   volumes:
     - /www/public
   volumes_from:
-    - web
+    - node1
+    - node2
+    - node3
+    - node4
+    - node5
   links:
-    - web:web
+    - node1:node1
+    - node2:node2
+    - node3:node3
+    - node4:node4
+    - node5:node5
 
-web:
+node1:
   build: .
+  dockerfile: Dockerfile_main
   volumes:
     - "./:/src/"
   ports:
     - "9080:9080"
-    - "9081:9081"
-    - "9082:9082"
+
+node2:
+  build: .
+  dockerfile: Dockerfile_as
+  volumes:
+    - "./:/src/"
+  ports:
     - "9083:9083"
+
+node3:
+  build: .
+  dockerfile: Dockerfile_bs
+  volumes:
+    - "./:/src/"
+  ports:
     - "9084:9084"
+
+node4:
+  build: .
+  dockerfile: Dockerfile_cs
+  volumes:
+    - "./:/src/"
+  ports:
+    - "9081:9081"
+
+node5:
+  build: .
+  dockerfile: Dockerfile_fs
+  volumes:
+    - "./:/src/"
+  ports:
+    - "9082:9082"
