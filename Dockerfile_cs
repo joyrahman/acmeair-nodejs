@@ -6,10 +6,12 @@ WORKDIR /src
 ADD package.json /src/package.json
 RUN npm install
 
-EXPOSE 9081
+EXPOSE 80
 
-ENV CUSTOMER_SERVICE=192.168.99.100/acmeair
-ENV AUTH_SERVICE=192.168.99.100/acmeair
-ENV MONGO_HOST=192.168.99.100
+ENV VCAP_APP_PORT=80
+
+#UPDATE IP BELOW
+ENV AUTH_SERVICE=nginx/acmeair
+ENV MONGO_HOST=mongo
 
 CMD node customerservice_app.js 

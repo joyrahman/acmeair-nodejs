@@ -1,11 +1,15 @@
 db:
+  container_name: mongo
   image: mongo
+  net: ${NETWORK}
   ports:
     - 27017:27017
 
 nginx:
+  container_name: nginx
   restart: always
   build: ./nginx/
+  net: ${NETWORK}
   ports:
     - "80:80"
   volumes:
@@ -16,49 +20,43 @@ nginx:
     - node3
     - node4
     - node5
-  links:
-    - node1:node1
-    - node2:node2
-    - node3:node3
-    - node4:node4
-    - node5:node5
 
-node1:
+node1: 
+  container_name: node1
   build: .
   dockerfile: Dockerfile_main
+  net: ${NETWORK}
   volumes:
     - "./:/src/"
-  ports:
-    - "9080:9080"
 
 node2:
+  container_name: node2
   build: .
   dockerfile: Dockerfile_as
+  net: ${NETWORK}
   volumes:
     - "./:/src/"
-  ports:
-    - "9083:9083"
 
 node3:
+  container_name: node3
   build: .
   dockerfile: Dockerfile_bs
+  net: ${NETWORK}
   volumes:
     - "./:/src/"
-  ports:
-    - "9084:9084"
 
 node4:
+  container_name: node4
   build: .
   dockerfile: Dockerfile_cs
+  net: ${NETWORK}
   volumes:
     - "./:/src/"
-  ports:
-    - "9081:9081"
 
 node5:
+  container_name: node5
   build: .
   dockerfile: Dockerfile_fs
+  net: ${NETWORK}
   volumes:
     - "./:/src/"
-  ports:
-    - "9082:9082"
