@@ -25,7 +25,10 @@ module.exports = function (dbtype, settings) {
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
-	var dataaccess = new require(daModuleName)(settings);
+	
+	var databaseName = process.env.DATABASE_NAME || "acmeair_bookingdb";
+	
+	var dataaccess = new require(daModuleName)(settings, databaseName);
 	
 	// auth service setup code ****
 	var http = require('http')
@@ -56,6 +59,10 @@ module.exports = function (dbtype, settings) {
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
+	
+	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
+		dataaccess.insertOne(collectionname, doc, callback)
+	};
 			
 	module.bookflights = function(req, res) {
 		logger.debug('booking flights');
@@ -146,6 +153,27 @@ module.exports = function (dbtype, settings) {
 			}
 		});
 	}
+	
+	module.countBookings = function(req,res) {
+		countItems(module.dbNames.bookingName, function (error,count){
+			if (error){
+				res.send("-1");
+			} else {
+				res.send(count.toString());
+			}
+		});
+	};
+	
+	countItems = function(dbName, callback /*(error, count)*/) {
+		console.log("Calling count on " + dbName);
+		dataaccess.count(dbName, {}, function(error, count) {
+			console.log("Output for "+dbName+" is "+count);
+			if (error) callback(error, null);
+			else {
+				callback(null,count);
+			}
+		});
+	};
 	
 	function validateSession(sessionId, callback /* (error, userid) */) {
 		var path = authContextRoot + "/rest/api/login/authcheck/" + sessionId;

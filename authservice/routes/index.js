@@ -25,7 +25,10 @@ module.exports = function (dbtype, settings) {
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
-	var dataaccess = new require(daModuleName)(settings);
+	
+	var databaseName = process.env.DATABASE_NAME || "acmeair_sessiondb";
+	
+	var dataaccess = new require(daModuleName)(settings, databaseName);
 			
 	// customer service setup code ****
 	var http = require('http')
@@ -56,6 +59,10 @@ module.exports = function (dbtype, settings) {
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
+	
+	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
+		dataaccess.insertOne(collectionname, doc, callback)
+	};
 	
 	module.login = function(req, res) {
 
@@ -115,6 +122,27 @@ module.exports = function (dbtype, settings) {
 			}
 		})
 	}
+	
+	module.countCustomerSessions = function(req,res) {
+		countItems(module.dbNames.customerSessionName, function (error,count){
+			if (error){
+				res.send("-1");
+			} else {
+				res.send(count.toString());
+			}
+		});
+	};
+	
+	countItems = function(dbName, callback /*(error, count)*/) {
+		console.log("Calling count on " + dbName);
+		dataaccess.count(dbName, {}, function(error, count) {
+			console.log("Output for "+dbName+" is "+count);
+			if (error) callback(error, null);
+			else {
+				callback(null,count);
+			}
+		});
+	};
 	
 	validateCustomer = function(login, password, callback) {
 		
@@ -186,7 +214,7 @@ module.exports = function (dbtype, settings) {
 			if (err) callback (err, null);
 			else{
 				if (now > session.timeoutTime) {
-					daraaccess.remove(module.dbNames.customerSessionName,sessionId, function(error) {
+					daraaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid}, function(error) {
 						callback(null, null);
 					});
 				}
@@ -198,12 +226,8 @@ module.exports = function (dbtype, settings) {
 	
 	invalidateSession = function(sessionid, callback /* error */) {
 		logger.debug("invalidate session in DB:"+sessionid);
-	    dataaccess.remove(module.dbNames.customerSessionName,sessionid,callback) ;
+	    dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) ;
 	}
 
-	module.initializeDatabaseConnections = function(callback/*(error)*/) {
-		dataaccess.initializeDatabaseConnections(callback);
-	}
-	
 	return module;
 }

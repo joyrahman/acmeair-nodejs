@@ -12,6 +12,6 @@ ENV VCAP_APP_PORT=80
 
 #Update IP Below
 ENV AUTH_SERVICE=nginx/acmeair
-ENV MONGO_HOST=mongo
+ENV MONGO_HOST=mongo2
 
 CMD node bookingservice_app.js 

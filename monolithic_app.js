@@ -91,15 +91,17 @@ router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.pu
 router.get('/config/runtime', routes.getRuntimeInfo);
 router.get('/config/dataServices', routes.getDataServiceInfo);
 router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
-router.get('/config/countBookings', routes.countBookings);
-router.get('/config/countCustomers', routes.countCustomer);
-router.get('/config/countSessions', routes.countCustomerSessions);
-router.get('/config/countFlights', routes.countFlights);
-router.get('/config/countFlightSegments', routes.countFlightSegments);
-router.get('/config/countAirports' , routes.countAirports);
-//router.get('/loaddb', startLoadDatabase);
-router.get('/loader/load', startLoadDatabase);
-router.get('/loader/query', loader.getNumConfiguredCustomers);
+
+router.get('/bookings/config/countBookings', routes.countBookings);
+router.get('/customer/config/countCustomers', routes.countCustomer);
+router.get('/login/config/countSessions', routes.countCustomerSessions);
+router.get('/flights/config/countFlights', routes.countFlights);
+router.get('/flights/config/countFlightSegments', routes.countFlightSegments);
+router.get('/flights/config/countAirports' , routes.countAirports);
+
+router.get('/customer/loader/load', startLoadCustomerDatabase);
+router.get('/flights/loader/load', startLoadFlightDatabase);
+router.get('/customer/loader/query', loader.getNumConfiguredCustomers);
 
 // ?
 router.get('/checkstatus', checkStatus);
@@ -141,14 +143,24 @@ function logout(req, res){
 }
 
 
-function startLoadDatabase(req, res){
+function startLoadCustomerDatabase(req, res){
 	if (!initialized)
      	{
 		logger.info("please wait for db connection initialized then trigger again.");
 		initDB();
 		res.sendStatus(400);
 	}else
-		loader.startLoadDatabase(req, res);
+		loader.startLoadCustomerDatabase(req, res);
+}
+
+function startLoadFlightDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	}else
+		loader.startLoadFlightDatabase(req, res);
 }
 
 function initDB(){

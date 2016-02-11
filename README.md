@@ -54,7 +54,7 @@ Assume MongoDB started on 127.0.0.1:27017
 
 	http://localhost:9085/acmeair-monolithic	
 
-### Run Acmeair in Micro-Service on Local
+### Run Acmeair in Micro-Service on Local (See Docker Instructions -> much easier)
 	
 	install nginx and startup using the nginx.conf file
 	

@@ -78,6 +78,7 @@ var routes = new require('./bookingservice/routes/index.js')(dbtype, settings);
 router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
 router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
 router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+router.get('/bookings/config/countBookings', routes.countBookings);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.bookingContextRoot, router);

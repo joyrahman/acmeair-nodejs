@@ -28,13 +28,20 @@ module.exports = function (dbtype, settings) {
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
-	var dataaccess = new require(daModuleName)(settings);
+	
+	var databaseName = process.env.DATABASE_NAME || "acmeair_flightdb";
+	
+	var dataaccess = new require(daModuleName)(settings, databaseName);
 	
 	module.dbNames = dataaccess.dbNames
 	
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
+	
+	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
+		dataaccess.insertOne(collectionname, doc, callback)
+	};
 			
 	module.queryflights = function(req, res) {
 		logger.debug('querying flights');
@@ -88,12 +95,47 @@ module.exports = function (dbtype, settings) {
 			}
 		});
 	};
-
 	
+	module.countFlights = function(req,res) {
+		countItems(module.dbNames.flightName, function (error,count){
+			if (error){
+				res.send("-1");
+			} else {
+				res.send(count.toString());
+			}
+		});
+	};
 	
-	module.initializeDatabaseConnections = function(callback/*(error)*/) {
-		dataaccess.initializeDatabaseConnections(callback);
-	}
+	module.countFlightSegments = function(req,res) {
+		countItems(module.dbNames.flightSegmentName, function (error,count){
+			if (error){
+				res.send("-1");
+			} else {
+				res.send(count.toString());
+			}
+		});
+	};
+	
+	module.countAirports = function(req,res) {
+		countItems(module.dbNames.airportCodeMappingName, function (error,count){
+			if (error){
+				res.send("-1");
+			} else {
+				res.send(count.toString());
+			}
+		});
+	};
+	
+	countItems = function(dbName, callback /*(error, count)*/) {
+		console.log("Calling count on " + dbName);
+		dataaccess.count(dbName, {}, function(error, count) {
+			console.log("Output for "+dbName+" is "+count);
+			if (error) callback(error, null);
+			else {
+				callback(null,count);
+			}
+		});
+	};
 	
 	
 	function getFlightByAirportsAndDepartureDate(fromAirport, toAirport, flightDate, callback /* error, flightSegment, flights[] */) {

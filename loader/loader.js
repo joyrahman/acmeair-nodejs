@@ -30,7 +30,7 @@ module.exports = function (loadUtil,settings) {
 	var loaderSettings = JSON.parse(fs.readFileSync('./loader/loader-settings.json', 'utf8'));
 
 	var DATABASE_PARALLELISM = 5;
-
+	
 	var nowAtMidnight = getDateAtTwelveAM(new Date());
 
 	var customerTemplate = {
@@ -109,21 +109,18 @@ module.exports = function (loadUtil,settings) {
 	
 	function insertAirportCodeMapping(airportCodeMapping, callback) {
 		loadUtil.insertOne(loadUtil.dbNames.airportCodeMappingName, airportCodeMapping, function(error, airportCodeMappingInserted) {
-			logger.debug('airportCodeMapping inserted = ' + JSON.stringify(airportCodeMappingInserted));
 			callback();
 		});
 	}
 	
 	function insertFlightSegment(flightSegment, callback) {
 		loadUtil.insertOne(loadUtil.dbNames.flightSegmentName, flightSegment, function(error, flightSegmentInserted) {
-			logger.debug('flightSegment inserted = ' + JSON.stringify(flightSegmentInserted));
 			callback();
 		});
 	}
 	
 	function insertFlight(flight, callback) {
 		loadUtil.insertOne(loadUtil.dbNames.flightName, flight, function(error, flightInserted) {
-			logger.debug('flight inserted = ' + JSON.stringify(flightInserted));
 			callback();
 		});
 	}
@@ -155,6 +152,51 @@ module.exports = function (loadUtil,settings) {
 		//res.send('Trigger DB loading');
 	}
 	
+	module.startLoadCustomerDatabase = function startLoadCustomerDatabase(req, res) {
+		if (customers.length>=1)
+	      {
+			
+			res.send('Already loaded');
+			return;
+	      }
+		
+		var numCustomers = req.query.numCustomers;
+		if(numCustomers === undefined) {
+			numCustomers = loaderSettings.MAX_CUSTOMERS;
+		}
+		logger.info('starting loading database');
+			createCustomers(numCustomers, function() {
+				logger.info('number of customers = ' + customers.length);
+				customerQueue.push(customers);
+				res.send('Database Finished Loading');
+			});
+		//res.send('Trigger DB loading');
+	}
+	
+	module.startLoadFlightDatabase = function startLoadFlightDatabase(req, res) {
+		
+			logger.info('starting loading database');
+			
+			createFlightRelatedData(function() {
+				
+				logger.info('number of airportCodeMappings = ' + airportCodeMappings.length);
+				logger.info('number of flightSegments = ' + flightSegments.length);
+				logger.info('number of flights = ' + flights.length);
+				
+				airportCodeMappingQueue.push(airportCodeMappings);
+				
+				flightQueue.drain = function() {
+					logger.info('all flights loaded');
+					logger.info('ending loading database');
+					res.send('Database Finished Loading');
+					
+				};
+				
+				
+			});
+		//res.send('Trigger DB loading');
+	}
+	
 	module.getNumConfiguredCustomers = function (req, res) {
 		res.contentType("text/plain");
 		res.send(loaderSettings.MAX_CUSTOMERS.toString());
@@ -163,8 +205,7 @@ module.exports = function (loadUtil,settings) {
 
 	var customerQueue = async.queue(insertCustomer, DATABASE_PARALLELISM);
 	customerQueue.drain = function() {
-		logger.info('all customers loaded');
-		airportCodeMappingQueue.push(airportCodeMappings);
+		logger.info('all customers loaded');	
 	}
 	
 	var airportCodeMappingQueue = async.queue(insertAirportCodeMapping, DATABASE_PARALLELISM);
@@ -173,30 +214,27 @@ module.exports = function (loadUtil,settings) {
 		flightSegmentsQueue.push(flightSegments);
 	}
 	
+	
 	var flightSegmentsQueue = async.queue(insertFlightSegment, DATABASE_PARALLELISM);
 	flightSegmentsQueue.drain = function() {
 		logger.info('all flightSegments loaded');
 		flightQueue.push(flights);
 	}
 	
-	var flightQueue = async.queue(insertFlight, DATABASE_PARALLELISM);
-	//flightQueue.drain = function() {
-	//	logger.info('all flights loaded');
-	//	logger.info('ending loading database');
-	//}
-	
+	var flightQueue = async.queue(insertFlight, DATABASE_PARALLELISM);	
 	
 	var customers = new Array();
 	var airportCodeMappings = new Array();
 	var flightSegments = new Array();
 	var flights = new Array();
 	
-	function createCustomers(numCustomers) {
+	function createCustomers(numCustomers, callback) {
 		for (var ii = 0; ii < numCustomers; ii++) {
 			var customer = cloneObjectThroughSerialization(customerTemplate);
 			customer._id = "uid" + ii + "@email.com";
 			customers.push(customer);
 		};
+		callback();
 	}
 	
 	function createFlightRelatedData(callback/*()*/) {
@@ -205,12 +243,8 @@ module.exports = function (loadUtil,settings) {
 		.from.path('./loader/mileage.csv',{ delimiter: ',' }) 
 		.on('record', function(data, index) {
 			rows[index] = data;
-		    logger.debug('#'+index+' '+JSON.stringify(data));
 		})
 		.on('end', function(count) {
-		    logger.debug('Number of lines: ' + count);
-		    logger.debug('rows.length = ' + rows.length);
-		    logger.debug('rows = ' + rows);
 			for (var ii = 0; ii < rows[0].length; ii++) {
 				var airportCodeMapping = cloneObjectThroughSerialization(airportCodeMappingTemplate);
 				airportCodeMapping._id = rows[1][ii];

@@ -45,7 +45,7 @@ if(process.env.VCAP_SERVICES){
 logger.info("db type=="+dbtype);
 
 var routes = new require('./main/routes/index.js')(dbtype, settings);
-var loader = new require('./loader/loader.js')(routes, settings);
+//var loader = new require('./loader/loader.js')(routes, settings);
 
 // Setup express with 4.0.0
 
@@ -79,14 +79,8 @@ var router = express.Router();
 router.get('/config/runtime', routes.getRuntimeInfo);
 router.get('/config/dataServices', routes.getDataServiceInfo);
 router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
-router.get('/config/countBookings', routes.countBookings);
-router.get('/config/countCustomers', routes.countCustomer);
-router.get('/config/countSessions', routes.countCustomerSessions);
-router.get('/config/countFlights', routes.countFlights);
-router.get('/config/countFlightSegments', routes.countFlightSegments);
-router.get('/config/countAirports' , routes.countAirports);
-router.get('/loader/load', startLoadDatabase);
-router.get('/loader/query', loader.getNumConfiguredCustomers);
+
+
 
 // ?
 router.get('/checkstatus', checkStatus);
@@ -95,41 +89,13 @@ router.get('/checkstatus', checkStatus);
 app.use(settings.mainContextRoot, router);
 
 // Only initialize DB after initialization of the authService is done
-var initialized = false;
 var serverStarted = false;
 
-initDB(); // only used for config/load
-
+startServer();
 
 function checkStatus(req, res){
 	res.sendStatus(200);
 }
-
-function startLoadDatabase(req, res){
-	if (!initialized)
-     	{
-		logger.info("please wait for db connection initialized then trigger again.");
-		initDB();
-		res.sendStatus(400);
-	}else
-		loader.startLoadDatabase(req, res);
-}
-
-function initDB(){
-    if (initialized ) return;
-		routes.initializeDatabaseConnections(function(error) {
-	if (error) {
-		logger.info('Error connecting to database - exiting process: '+ error);
-		// Do not stop the process for debug in container service
-		//process.exit(1); 
-	}else
-	      initialized =true;
-
-	logger.info("Initialized database connections");
-	startServer();
-	});
-}
-
 
 function startServer() {
 	if (serverStarted ) return;

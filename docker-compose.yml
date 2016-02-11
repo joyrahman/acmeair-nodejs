@@ -2,8 +2,26 @@ db:
   container_name: mongo
   image: mongo
   net: ${NETWORK}
-  ports:
-    - 27017:27017
+    
+db1:
+  container_name: mongo2
+  image: mongo
+  net: ${NETWORK}
+    
+db2:
+  container_name: mongo3
+  image: mongo
+  net: ${NETWORK}
+    
+db3:
+  container_name: mongo4
+  image: mongo
+  net: ${NETWORK}
+    
+db4:
+  container_name: mongo5
+  image: mongo
+  net: ${NETWORK}
 
 nginx:
   container_name: nginx

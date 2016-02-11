@@ -70,6 +70,8 @@ var router = express.Router();
 router.post('/login', routes.login);
 router.get('/login/logout', routes.logout);
 router.get('/login/authcheck/:tokenid', routes.authcheck);
+router.get('/login/config/countSessions', routes.countCustomerSessions);
+
 
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 

@@ -25,13 +25,20 @@ module.exports = function (dbtype, settings) {
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
-	var dataaccess = new require(daModuleName)(settings);
+	
+	var databaseName = process.env.DATABASE_NAME || "acmeair_customerdb";
+	
+	var dataaccess = new require(daModuleName)(settings, databaseName);
 	
 	module.dbNames = dataaccess.dbNames
 	
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
+	
+	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
+		dataaccess.insertOne(collectionname, doc, callback)
+	};
 	
 	// auth service setup code ****
 	var http = require('http')
@@ -165,7 +172,27 @@ module.exports = function (dbtype, settings) {
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
+		
+	module.countCustomer = function(req,res) {
+		countItems(module.dbNames.customerName, function (error,count){
+			if (error){
+				res.send("-1");
+			} else {
+				res.send(count.toString());
+			}
+		});
+	};
 	
+	countItems = function(dbName, callback /*(error, count)*/) {
+		console.log("Calling count on " + dbName);
+		dataaccess.count(dbName, {}, function(error, count) {
+			console.log("Output for "+dbName+" is "+count);
+			if (error) callback(error, null);
+			else {
+				callback(null,count);
+			}
+		});
+	};
 	
 	function getCustomer(username, callback /* (error, Customer) */) {
 	    dataaccess.findOne(module.dbNames.customerName, username, callback);

@@ -71,8 +71,13 @@ app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 	
 var routes = new require('./flightservice/routes/index.js')(dbtype, settings); 
+var loader = new require('./loader/loader.js')(routes, settings);
 
 router.post('/flights/queryflights', routes.queryflights);
+router.get('/flights/config/countFlights', routes.countFlights);
+router.get('/flights/config/countFlightSegments', routes.countFlightSegments);
+router.get('/flights/config/countAirports' , routes.countAirports);
+router.get('/flights/loader/load', startLoadFlightDatabase);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.flightContextRoot, router);
@@ -104,6 +109,17 @@ function startServer() {
 	serverStarted = true;
 	app.listen(port);
 	console.log('Application started port ' + port);
+}
+
+function startLoadFlightDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	}else {
+		loader.startLoadFlightDatabase(req, res);
+	}
 }
 
 function checkStatus(req, res){

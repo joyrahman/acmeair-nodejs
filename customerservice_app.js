@@ -79,10 +79,14 @@ app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 				
 var routes = new require('./customerservice/routes/index.js')(dbtype, settings); 
+var loader = new require('./loader/loader.js')(routes, settings);
 
 router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
 router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
 router.post('/customer/validateid', routes.validateId);
+router.get('/customer/config/countCustomers', routes.countCustomer);
+router.get('/customer/loader/load', startLoadCustomerDatabase);
+router.get('/customer/loader/query', loader.getNumConfiguredCustomers);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.customerContextRoot, router);
@@ -114,6 +118,17 @@ function startServer() {
 	serverStarted = true;
 	app.listen(port);
 	console.log('Application started port ' + port);
+}
+
+function startLoadCustomerDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	} else {
+		loader.startLoadCustomerDatabase(req, res);
+	}
 }
 
 function checkStatus(req, res){

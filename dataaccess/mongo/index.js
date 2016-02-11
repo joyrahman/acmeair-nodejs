@@ -23,7 +23,7 @@
 // 		findBy(collname, condition as json of field and value,function(err, docs))
 //		count(collname, condition as json of field and value, function(error, count))
 
-module.exports = function (settings) {
+module.exports = function (settings, dbName) {
     var module = {};
 
 	var mongodb = require('mongodb');
@@ -69,7 +69,7 @@ module.exports = function (settings) {
 			    "username":"",
 			    "password":"",
 			    "name":"",
-			    "db":"acmeair"
+			    "db":dbName
 		    }
 		}
 		// Default to read from settings file
@@ -81,7 +81,7 @@ module.exports = function (settings) {
 		    "username":"",
 		    "password":"",
 		    "name":"",
-		    "db":"acmeair"
+		    "db":dbName
 		 }
 		}
 		
@@ -101,7 +101,7 @@ module.exports = function (settings) {
 	        }
 			obj.hostname = (obj.hostname || 'localhost');
 			obj.port = (obj.port || 27017);
-			obj.db = (obj.db || 'acmeair');
+			obj.db = (obj.db || dbName);
 
 			if(obj.username && obj.password){
 				return "mongodb://" + obj.username + ":" + obj.password + "@" + obj.hostname + ":" + obj.port + "/" + obj.db;
@@ -113,6 +113,7 @@ module.exports = function (settings) {
 
 		var mongourl = generate_mongo_url(mongo);
 		
+		
 		var c_opt = {server:{auto_reconnect:true,poolSize: settings.mongoConnectionPoolSize}};
 	    mongodb.connect(mongourl, c_opt, function(err, conn){
 	             if (err){
@@ -120,18 +121,24 @@ module.exports = function (settings) {
 	             }else {
 	             dbclient=conn;
 	             // Add ensureIndex here
-	             dbclient.ensureIndex(module.dbNames.bookingName, {customerId:1}
-	             , {background:true}, function(err, indexName) {
+	             // hack for now...
+	             if (mongourl.indexOf("session") ==-1 && mongourl.indexOf("customer") ==-1 && mongourl.indexOf("flight") ==-1) {
+	             	dbclient.ensureIndex(module.dbNames.bookingName, {customerId:1}
+	             	, {background:true}, function(err, indexName) {
+	             		logger.info("ensureIndex:"+err+":"+indexName);
+	             	});
+	             }
+	             if (mongourl.indexOf("session") ==-1 && mongourl.indexOf("customer") ==-1 && mongourl.indexOf("booking") ==-1) {
+	            	 dbclient.ensureIndex(module.dbNames.flightName, {flightSegmentId:1,scheduledDepartureTime:2}
+	             	, {background:true}, function(err, indexName) {
 	            	 logger.info("ensureIndex:"+err+":"+indexName);
-	             });
-	             dbclient.ensureIndex(module.dbNames.flightName, {flightSegmentId:1,scheduledDepartureTime:2}
-	             , {background:true}, function(err, indexName) {
+	             	});
+	             
+	             	dbclient.ensureIndex(module.dbNames.flightSegmentName, {originPort:1,destPort:2}
+	             	, {background:true}, function(err, indexName) {
 	            	 logger.info("ensureIndex:"+err+":"+indexName);
-	             });
-	             dbclient.ensureIndex(module.dbNames.flightSegmentName, {originPort:1,destPort:2}
-	             , {background:true}, function(err, indexName) {
-	            	 logger.info("ensureIndex:"+err+":"+indexName);
-	             });
+	             	});
+	             }
 	             callback(null);
 	             }
 	        });
@@ -188,20 +195,25 @@ module.exports = function (settings) {
 	};
 
 	module.remove = function(collectionname,condition, callback/* (error) */) {
+		
 		dbclient.collection(collectionname,function(error, collection){
+
 			  if (error){
-				  logger.error("remove hit error:"+error);
+				  console.log("remove hit error:"+error);
 				  callback(error, null);
 			  }
 			  else{
+				
 				collection.remove({_id: condition._id}, {safe: true}, function(err, numDocs) {
 					if (err) callback (err);
-					else callback(null);
+					else {
+						callback(null);
+					}
 				});
 			  }
 		});
 	};
-
+	
 	module.findBy = function(collectionname,condition, callback/* (error, docs) */) {
 		dbclient.collection(collectionname,function(error, collection){
 			  if (error){
