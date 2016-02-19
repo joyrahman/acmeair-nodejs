@@ -98,6 +98,7 @@ module.exports = function (dbtype, settings) {
 	}
 	
 	function validateSession(sessionId, callback /* (error, userid) */) {
+		http.globalAgent.keepAlive = true;
 		var path = authContextRoot + "/rest/api/login/authcheck/" + sessionId;
      	var options = {
 		hostname: host,
@@ -153,7 +154,7 @@ module.exports = function (dbtype, settings) {
 			if (req.body.password == customer.password) {
 				res.send('{"validCustomer":"true"}');
 			} else {
-					res.send('{"validCustomer":"false"}');
+				res.send('{"validCustomer":"false"}');
 			}
 		});
 	};

@@ -79,7 +79,7 @@ module.exports = function (dbtype, settings) {
 				return;
 			}
 			
-			if (!customerValid) {
+			if (customerValid == "false") {
 				res.sendStatus(403);
 			}
 			else {
@@ -147,6 +147,7 @@ module.exports = function (dbtype, settings) {
 	validateCustomer = function(login, password, callback) {
 		
 		// make service call to customerService
+		http.globalAgent.keepAlive = true;
 		var querystring = require('querystring');
     	var dataString = querystring.stringify({
     	      login: login,

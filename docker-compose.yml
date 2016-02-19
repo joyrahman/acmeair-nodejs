@@ -1,43 +1,22 @@
-db:
-  container_name: mongo
-  image: mongo
-  net: ${NETWORK}
-    
 db1:
-  container_name: mongo2
+  container_name: mongo1
   image: mongo
   net: ${NETWORK}
     
 db2:
-  container_name: mongo3
+  container_name: mongo2
   image: mongo
   net: ${NETWORK}
     
 db3:
-  container_name: mongo4
+  container_name: mongo3
   image: mongo
   net: ${NETWORK}
     
 db4:
-  container_name: mongo5
+  container_name: mongo4
   image: mongo
   net: ${NETWORK}
-
-nginx:
-  container_name: nginx
-  restart: always
-  build: ./nginx/
-  net: ${NETWORK}
-  ports:
-    - "80:80"
-  volumes:
-    - /www/public
-  volumes_from:
-    - node1
-    - node2
-    - node3
-    - node4
-    - node5
 
 node1: 
   container_name: node1
@@ -54,6 +33,8 @@ node2:
   net: ${NETWORK}
   volumes:
     - "./:/src/"
+  volumes_from:
+    - db1
 
 node3:
   container_name: node3
@@ -62,6 +43,8 @@ node3:
   net: ${NETWORK}
   volumes:
     - "./:/src/"
+  volumes_from:
+    - db2
 
 node4:
   container_name: node4
@@ -70,6 +53,8 @@ node4:
   net: ${NETWORK}
   volumes:
     - "./:/src/"
+  volumes_from:
+    - db3
 
 node5:
   container_name: node5
@@ -78,3 +63,21 @@ node5:
   net: ${NETWORK}
   volumes:
     - "./:/src/"
+  volumes_from:
+    - db4
+    
+nginx:
+  container_name: nginx
+  restart: always
+  build: ./nginx/
+  net: ${NETWORK}
+  ports:
+    - "80:80"
+  volumes:
+    - /www/public
+  volumes_from:
+    - node1
+    - node2
+    - node3
+    - node4
+    - node5

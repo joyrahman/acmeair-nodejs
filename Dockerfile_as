@@ -1,4 +1,4 @@
-FROM node:0.10.38
+FROM node:latest
 
 RUN mkdir /src
 
@@ -12,6 +12,6 @@ ENV VCAP_APP_PORT=80
 
 #UPDATE IP BELOW
 ENV CUSTOMER_SERVICE=nginx/acmeair
-ENV MONGO_HOST=mongo
+ENV MONGO_HOST=mongo1
 
 CMD node authservice_app.js 

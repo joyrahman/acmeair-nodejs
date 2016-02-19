@@ -176,6 +176,7 @@ module.exports = function (dbtype, settings) {
 	};
 	
 	function validateSession(sessionId, callback /* (error, userid) */) {
+		http.globalAgent.keepAlive = true;
 		var path = authContextRoot + "/rest/api/login/authcheck/" + sessionId;
      	var options = {
 		hostname: host,
