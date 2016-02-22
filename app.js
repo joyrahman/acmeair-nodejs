@@ -85,6 +85,7 @@ logger.info("db type=="+dbtype);
 
 var routes = new require('./routes/index.js')(dbtype, authService, settings);
 var loader = new require('./loader/loader.js')(routes, settings);
+var websocket = new require('./websocket/index.js')();
 
 // Setup express with 4.0.0
 
@@ -92,7 +93,8 @@ var app = express();
 var morgan         = require('morgan');
 var bodyParser     = require('body-parser');
 var methodOverride = require('method-override');
-var cookieParser = require('cookie-parser')
+var cookieParser = require('cookie-parser');
+var ws = require('ws').Server;
 
 app.use(express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
 if (settings.useDevLogger)
@@ -161,6 +163,10 @@ if (authService && authService.hystrixStream)
 
 //REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.contextRoot, router);
+
+
+var wss = new ws({port:8080});
+wss.on('connection', websocket.chat);
 
 // Only initialize DB after initialization of the authService is done
 var initialized = false;

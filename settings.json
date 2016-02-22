@@ -12,7 +12,7 @@
 	"flightbookingservice_port": 9082,
 	"flightbookingContextRoot": "/acmeair-fbs/rest/api",
 		
-	"mongoHost" : "127.0.0.1",
+	"mongoHost" : "omni.canlab.ibm.com",
 	"mongoPort" : 27017,
 	"mongoConnectionPoolSize": 10,
 
@@ -33,6 +33,6 @@
 	"flightDataCacheTTL" :  1200000,
 	"flightDataCacheMaxSize" : 100000,
 	
-	"loggerLevel" : "INFO",
-	"useDevLogger" : true     
+	"loggerLevel" : "DEBUG",
+	"useDevLogger" : false     
 }

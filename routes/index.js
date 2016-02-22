@@ -126,6 +126,7 @@ module.exports = function (dbtype, authService, settings) {
 		var fromAirport = req.body.fromAirport;
 		var toAirport = req.body.toAirport;
 		var fromDateWeb = new Date(req.body.fromDate);
+		//If your acmeair is in another time zone (e.g. Your browser is in EST & Acmeair server is in CST), fromDate will be 1 day behind than fromDateWeb & won't query 
 		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
 		var oneWay = (req.body.oneWay == 'true');
 		var returnDateWeb = new Date(req.body.returnDate);
