@@ -153,3 +153,9 @@ MAX_FLIGHTS_PER_DAY | 1 | max flights per day
 
 
 * When drive acmeair workload, you need follow the [instruction](https://github.com/acmeair/acmeair/wiki/jMeter-Workload-Instructions) to use -DusePureIDs=true when starting jmeter.
+
+### Known Limitations
+
+* Acmeair converts flight Departure Date from Browser Date & Time Zone to Acmeair server Date & Time Zone for Bluemix.  Because of this, if the Acmeair server is behind the time (e.g. browser is in EST, however, Acmeair server is in CST), query date will be converted to 1 day behind (today at 0AM becomes yesterday 0AM), user will not be able to query a flight. This happens because it is not using GMT. (routes/index.js, line 130)
+
+* If a user queries flight without logging in, Acmeair will terminate. In this case, Acmeair needs to be restarted. (routes/index.js, line 391)
