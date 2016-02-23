@@ -30,8 +30,12 @@ module.exports = function (dbtype, settings) {
 	
 	var dataaccess = new require(daModuleName)(settings, databaseName);
 			
+	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
+		dataaccess.removeAll(collectionname, callback)
+	};
+	
 	// customer service setup code ****
-	var http = require('http')
+	var http = require('http');
     
     // Place holder for service registry/discovery code
 	var location = process.env.CUSTOMER_SERVICE || "localhost/acmeair";

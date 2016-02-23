@@ -74,11 +74,13 @@ app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 	
 var routes = new require('./bookingservice/routes/index.js')(dbtype, settings); 
+var loader = new require('./loader/loader.js')(routes, settings);
 
 router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
 router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
 router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
 router.get('/bookings/config/countBookings', routes.countBookings);
+router.get('/bookings/loader/load', clearBookingDatabase);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.bookingContextRoot, router);
@@ -110,6 +112,17 @@ function startServer() {
 	serverStarted = true;
 	app.listen(port);
 	console.log('Application started port ' + port);
+}
+
+function clearBookingDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	}else {
+		loader.clearBookingDatabase(req, res);
+	}
 }
 
 function checkStatus(req, res){

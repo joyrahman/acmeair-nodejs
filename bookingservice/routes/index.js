@@ -30,6 +30,10 @@ module.exports = function (dbtype, settings) {
 	
 	var dataaccess = new require(daModuleName)(settings, databaseName);
 	
+	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
+		dataaccess.removeAll(collectionname, callback)
+	};
+	
 	// auth service setup code ****
 	var http = require('http')
     

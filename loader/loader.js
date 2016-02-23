@@ -153,48 +153,89 @@ module.exports = function (loadUtil,settings) {
 	}
 	
 	module.startLoadCustomerDatabase = function startLoadCustomerDatabase(req, res) {
-		if (customers.length>=1)
-	      {
-			
-			res.send('Already loaded');
-			return;
-	      }
+
+		logger.info("numCustomers: " + req.query.numCustomers);
 		
 		var numCustomers = req.query.numCustomers;
-		if(numCustomers === undefined) {
+		if(numCustomers == undefined) {
 			numCustomers = loaderSettings.MAX_CUSTOMERS;
 		}
+		
 		logger.info('starting loading database');
-			createCustomers(numCustomers, function() {
-				logger.info('number of customers = ' + customers.length);
-				customerQueue.push(customers);
-				res.send('Database Finished Loading');
-			});
-		//res.send('Trigger DB loading');
+		
+		loadUtil.removeAll(loadUtil.dbNames.customerName, function(err) {
+			if (err) {
+				logger.debug(err);
+			} else {		
+				createCustomers(numCustomers, function() {
+					logger.info('number of customers = ' + customers.length);
+					customerQueue.push(customers);
+					res.send('Database Finished Loading');
+				});
+			}
+		});
 	}
 	
 	module.startLoadFlightDatabase = function startLoadFlightDatabase(req, res) {
 		
-			logger.info('starting loading database');
-			
-			createFlightRelatedData(function() {
-				
-				logger.info('number of airportCodeMappings = ' + airportCodeMappings.length);
-				logger.info('number of flightSegments = ' + flightSegments.length);
-				logger.info('number of flights = ' + flights.length);
-				
-				airportCodeMappingQueue.push(airportCodeMappings);
-				
-				flightQueue.drain = function() {
-					logger.info('all flights loaded');
-					logger.info('ending loading database');
-					res.send('Database Finished Loading');
+			// this is ugly...
+			logger.info('starting loading database');	
+			loadUtil.removeAll(loadUtil.dbNames.airportCodeMappingName, function(err) {
+				if (err) {
+					logger.debug(err);
+				} else {	
 					
-				};
+					loadUtil.removeAll(loadUtil.dbNames.flightSegmentName, function(err) {
+						if (err) {
+							logger.debug(err);
+						} else {		
+					
+							loadUtil.removeAll(loadUtil.dbNames.flightName, function(err) {
+								if (err) {
+									logger.debug(err);
+								} else {		
+									
+									createFlightRelatedData(function() {
+										logger.info('number of airportCodeMappings = ' + airportCodeMappings.length);
+										logger.info('number of flightSegments = ' + flightSegments.length);
+										logger.info('number of flights = ' + flights.length);
 				
+										airportCodeMappingQueue.push(airportCodeMappings);
 				
+										flightQueue.drain = function() {
+											logger.info('all flights loaded');
+											logger.info('ending loading database');
+											res.send('Database Finished Loading');
+										};	
+									});
+								}
+							});
+						}
+					});
+				}
 			});
-		//res.send('Trigger DB loading');
+	}
+	
+	module.clearSessionDatabase = function clearSessionDatabase(req, res) {
+		
+		logger.info('starting clearing sesison database');	
+		loadUtil.removeAll(loadUtil.dbNames.customerSessionName, function(err) {
+			if (err) {
+				logger.debug(err);
+			} 
+			res.send('Database Finished Loading');
+		});
+	}
+	
+	module.clearBookingDatabase = function clearSessionDatabase(req, res) {
+		
+		logger.info('starting clearing sesison database');	
+		loadUtil.removeAll(loadUtil.dbNames.bookingName, function(err) {
+			if (err) {
+				logger.debug(err);
+			} 
+			res.send('Database Finished Loading');
+		});
 	}
 	
 	module.getNumConfiguredCustomers = function (req, res) {
@@ -229,6 +270,7 @@ module.exports = function (loadUtil,settings) {
 	var flights = new Array();
 	
 	function createCustomers(numCustomers, callback) {
+		customers = new Array();
 		for (var ii = 0; ii < numCustomers; ii++) {
 			var customer = cloneObjectThroughSerialization(customerTemplate);
 			customer._id = "uid" + ii + "@email.com";
@@ -238,6 +280,9 @@ module.exports = function (loadUtil,settings) {
 	}
 	
 	function createFlightRelatedData(callback/*()*/) {
+		airportCodeMappings = new Array();
+		flightSegments = new Array();
+		flights = new Array();
 		var rows = new Array();
 		csv()
 		.from.path('./loader/mileage.csv',{ delimiter: ',' }) 

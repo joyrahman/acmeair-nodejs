@@ -41,8 +41,6 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./authservice/routes/index.js')(dbtype,settings); 
-
 // call the packages we need
 var express    = require('express'); 		
 var app        = express(); 				
@@ -65,14 +63,15 @@ app.use(urlencodedParser);
 app.use(bodyParser.text({ type: 'text/html' }));
 app.use(cookieParser()); 
 
-var router = express.Router(); 		
+var router = express.Router(); 	
+var routes = new require('./authservice/routes/index.js')(dbtype,settings); 
+var loader = new require('./loader/loader.js')(routes, settings);
 
 router.post('/login', routes.login);
 router.get('/login/logout', routes.logout);
 router.get('/login/authcheck/:tokenid', routes.authcheck);
 router.get('/login/config/countSessions', routes.countCustomerSessions);
-
-
+router.get('/login/loader/load', clearSessionDatabase);
 
 // REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.authContextRoot, router);
@@ -96,6 +95,17 @@ function initDB(){
 			}
 			startServer();
 	});
+}
+
+function clearSessionDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	}else {
+		loader.clearSessionDatabase(req, res);
+	}
 }
 
 

@@ -205,14 +205,35 @@ module.exports = function (settings, dbName) {
 			  else{
 				
 				collection.remove({_id: condition._id}, {safe: true}, function(err, numDocs) {
-					if (err) callback (err);
+					if (err) 
+						callback (err);
 					else {
 						callback(null);
 					}
 				});
+				
 			  }
 		});
 	};
+		
+	module.removeAll = function(collectionname, callback) {
+		dbclient.collection(collectionname,function(error, collection){
+
+			  if (error){
+				  console.log("remove hit error:"+error);
+				  callback(error);
+			  } else {
+				  collection.remove({}, function(err, numDocs) {
+					  if (err) 
+						  callback (err);
+					  else {
+						  callback(null);
+					  }
+				  });
+			  }
+		});
+		
+	}
 	
 	module.findBy = function(collectionname,condition, callback/* (error, docs) */) {
 		dbclient.collection(collectionname,function(error, collection){

@@ -43,6 +43,10 @@ module.exports = function (dbtype, settings) {
 	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
 		dataaccess.insertOne(collectionname, doc, callback)
 	};
+	
+	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
+		dataaccess.removeAll(collectionname, callback)
+	};
 
 	module.checkForValidSessionCookie = function(req, res, next) {
 		logger.debug('checkForValidCookie');

@@ -30,7 +30,6 @@ module.exports = function (dbtype, settings) {
 	logger.info("Use dataaccess:"+daModuleName);
 	
 	var databaseName = process.env.DATABASE_NAME || "acmeair_flightdb";
-	
 	var dataaccess = new require(daModuleName)(settings, databaseName);
 	
 	module.dbNames = dataaccess.dbNames
@@ -41,6 +40,10 @@ module.exports = function (dbtype, settings) {
 	
 	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
 		dataaccess.insertOne(collectionname, doc, callback)
+	};
+	
+	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
+		dataaccess.removeAll(collectionname, callback)
 	};
 			
 	module.queryflights = function(req, res) {

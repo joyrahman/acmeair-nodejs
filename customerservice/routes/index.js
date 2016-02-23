@@ -27,18 +27,7 @@ module.exports = function (dbtype, settings) {
 	logger.info("Use dataaccess:"+daModuleName);
 	
 	var databaseName = process.env.DATABASE_NAME || "acmeair_customerdb";
-	
 	var dataaccess = new require(daModuleName)(settings, databaseName);
-	
-	module.dbNames = dataaccess.dbNames
-	
-	module.initializeDatabaseConnections = function(callback/*(error)*/) {
-		dataaccess.initializeDatabaseConnections(callback);
-	}
-	
-	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
-		dataaccess.insertOne(collectionname, doc, callback)
-	};
 	
 	// auth service setup code ****
 	var http = require('http')
@@ -62,7 +51,21 @@ module.exports = function (dbtype, settings) {
 		authContextRoot = '/' + split1[1];
 		port=80;
 	}
-	// *****
+	
+	module.dbNames = dataaccess.dbNames
+	
+	module.initializeDatabaseConnections = function(callback/*(error)*/) {
+		dataaccess.initializeDatabaseConnections(callback);
+	}
+	
+	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
+		dataaccess.insertOne(collectionname, doc, callback)
+	};
+	
+	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
+		dataaccess.removeAll(collectionname, callback)
+	};
+	
 	
 	module.checkForValidSessionCookie = function(req, res, next) {
 		logger.debug('checkForValidCookie');
@@ -169,10 +172,6 @@ module.exports = function (dbtype, settings) {
 			res.send(customer);
 		});
 	};
-	
-	module.initializeDatabaseConnections = function(callback/*(error)*/) {
-		dataaccess.initializeDatabaseConnections(callback);
-	}
 		
 	module.countCustomer = function(req,res) {
 		countItems(module.dbNames.customerName, function (error,count){

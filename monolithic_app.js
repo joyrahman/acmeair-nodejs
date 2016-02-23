@@ -44,9 +44,6 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./monolithic/routes/index.js')(dbtype, settings);
-var loader = new require('./loader/loader.js')(routes, settings);
-
 // Setup express with 4.0.0
 
 var app = express();
@@ -72,7 +69,9 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
-var router = express.Router(); 		
+var router = express.Router(); 	
+var routes = new require('./monolithic/routes/index.js')(dbtype, settings);
+var loader = new require('./loader/loader.js')(routes, settings);
 
 // main app
 router.post('/login', login);
@@ -99,9 +98,11 @@ router.get('/flights/config/countFlights', routes.countFlights);
 router.get('/flights/config/countFlightSegments', routes.countFlightSegments);
 router.get('/flights/config/countAirports' , routes.countAirports);
 
+router.get('/customer/loader/query', loader.getNumConfiguredCustomers);
 router.get('/customer/loader/load', startLoadCustomerDatabase);
 router.get('/flights/loader/load', startLoadFlightDatabase);
-router.get('/customer/loader/query', loader.getNumConfiguredCustomers);
+router.get('/login/loader/load', clearSessionDatabase);
+router.get('/bookings/loader/load', clearBookingDatabase);
 
 // ?
 router.get('/checkstatus', checkStatus);
@@ -161,6 +162,26 @@ function startLoadFlightDatabase(req, res){
 		res.sendStatus(400);
 	}else
 		loader.startLoadFlightDatabase(req, res);
+}
+
+function clearSessionDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	}else
+		loader.clearSessionDatabase(req, res);
+}
+
+function clearBookingDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	}else
+		loader.clearBookingDatabase(req, res);
 }
 
 function initDB(){

@@ -84,7 +84,7 @@
     }
     
     <!-- load customers and then flights -->
-    function loadDB() {
+    function loadCustomerDB() {
     	showWaitDialog();
     	dojo.xhrGet({
     		content : {
@@ -102,13 +102,45 @@
     	});
     }
     
-    function loadDB2() {
+    function loadFlightDB() {
     	showWaitDialog();
     	dojo.xhrGet({
     		url: basePath.concat('flights/loader/load'),
     		load: function(response, ioArgs) {
     			hideWaitDialog();
     			alert('Flight Database Loaded, response: ' + response);
+    		},
+    		error: function(response, ioArgs) {
+    			hideWaitDialog();
+    			alert('error loaddb, response: ' + response);
+    		}
+    	});
+    	
+    }
+    
+     function clearSessionDB() {
+    	showWaitDialog();
+    	dojo.xhrGet({
+    		url: basePath.concat('login/loader/load'),
+    		load: function(response, ioArgs) {
+    			hideWaitDialog();
+    			alert('Session Database Cleared, response: ' + response);
+    		},
+    		error: function(response, ioArgs) {
+    			hideWaitDialog();
+    			alert('error loaddb, response: ' + response);
+    		}
+    	});
+    	
+    }
+    
+     function clearBookingDB() {
+    	showWaitDialog();
+    	dojo.xhrGet({
+    		url: basePath.concat('bookings/loader/load'),
+    		load: function(response, ioArgs) {
+    			hideWaitDialog();
+    			alert('Booking Database Cleared, response: ' + response);
     		},
     		error: function(response, ioArgs) {
     			hideWaitDialog();
@@ -198,8 +230,8 @@
 			<h2>Loader Configuration </h2>
 			<br/>
       		Number of Customers to Load: <input type="text" dojoType="dijit.form.TextBox" id="customerSizeInput" data-dojo-props="trim:true" required="true"></input><br/>
-      		<button dojoType="dijit.form.Button" id="loadDatabaseButton" onClick="loadDB()">Load the Customer Database</button>
-      		<button dojoType="dijit.form.Button" id="loadDatabaseButton2" onClick="loadDB2()">Load the Flight Database</button>
+      		<button dojoType="dijit.form.Button" id="loadDatabaseButton" onClick="clearSessionDB();clearBookingDB();loadCustomerDB();loadFlightDB();">(Re)Load the Database</button>
+      		<!-- <button dojoType="dijit.form.Button" id="loadDatabaseButton2" onClick="loadDB2()">(Re)Load the Flight Database</button>-->
       		</br/>						
 		</div>
 	</div>
