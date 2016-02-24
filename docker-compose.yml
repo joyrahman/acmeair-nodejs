@@ -66,6 +66,14 @@ node5:
   volumes_from:
     - db4
     
+node6:
+  container_name: node6
+  build: .
+  dockerfile: Dockerfile_ss
+  net: ${NETWORK}
+  volumes:
+    - "./:/src/"
+    
 nginx:
   container_name: nginx
   restart: always
@@ -81,3 +89,4 @@ nginx:
     - node3
     - node4
     - node5
+    - node6

@@ -47,12 +47,15 @@ logger.info("db type=="+dbtype);
 // Setup express with 4.0.0
 
 var app = express();
+var expressWs = require('express-ws')(app); 
 var morgan         = require('morgan');
 var bodyParser     = require('body-parser');
 var methodOverride = require('method-override');
-var cookieParser = require('cookie-parser')
+var cookieParser = require('cookie-parser');
+var restCtxRoot = settings.monolithicContextRoot;
+var ctxRoot = restCtxRoot.substring(0,restCtxRoot.indexOf("/",restCtxRoot.indexOf("/")+1));
 
-app.use('/acmeair-monolithic',express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
+app.use(ctxRoot,express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
 if (settings.useDevLogger)
 	app.use(morgan('dev'));                     		// log every request to the console
 
@@ -72,6 +75,12 @@ app.use(cookieParser());                  				// parse cookie
 var router = express.Router(); 	
 var routes = new require('./monolithic/routes/index.js')(dbtype, settings);
 var loader = new require('./loader/loader.js')(routes, settings);
+var websocket = new require('./websocket/index.js')();
+
+// connect to websocket (may be a better way?)
+app.ws(ctxRoot+ '/support', function(ws, req) {
+	websocket.chat(ws);
+});
 
 // main app
 router.post('/login', login);

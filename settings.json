@@ -16,6 +16,9 @@
 	
 	"bookingservice_port": 9084,
 	"bookingContextRoot": "/acmeair-bs/rest/api",
+	
+	"supportservice_port": 9085,
+	"supportContextRoot": "/acmeair-ss",
 		
 	"mongoHost" : "127.0.0.1",
 	"mongoPort" : 27017,

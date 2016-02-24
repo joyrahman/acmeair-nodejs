@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2015 IBM Corp.
+* Copyright (c) 2016 IBM Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -21,16 +21,14 @@ var express = require('express')
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 
 log4js.configure('log4js.json', {});
-var logger = log4js.getLogger('main_app');
+var logger = log4js.getLogger('monolithic_app');
 logger.setLevel(settings.loggerLevel);
 
 // disable process.env.PORT for now as it cause problem on mesos slave
-var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.main_port);
+var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.supportservice_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
-
-var dbtype = process.env.dbtype || "mongo";
 
 // Calculate the backend datastore type if run inside BLuemix or cloud foundry
 if(process.env.VCAP_SERVICES){
@@ -42,23 +40,16 @@ if(process.env.VCAP_SERVICES){
 	else if (serviceKey && serviceKey.indexOf('redis')>-1)
 		dbtype="redis";
 }
-logger.info("db type=="+dbtype);
-
-var routes = new require('./main/routes/index.js')(dbtype, settings);
-//var loader = new require('./loader/loader.js')(routes, settings);
 
 // Setup express with 4.0.0
-
 var app = express();
+var expressWs = require('express-ws')(app); 
 var morgan         = require('morgan');
 var bodyParser     = require('body-parser');
 var methodOverride = require('method-override');
 var cookieParser = require('cookie-parser');
-var restCtxRoot = settings.mainContextRoot;
-var ctxRoot = restCtxRoot.substring(0,restCtxRoot.indexOf("/",restCtxRoot.indexOf("/")+1));
 
-app.use(ctxRoot,express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
-
+app.use(settings.supportContextRoot,express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
 if (settings.useDevLogger)
 	app.use(morgan('dev'));                     		// log every request to the console
 
@@ -75,33 +66,29 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
-var router = express.Router(); 		
+var websocket = new require('./websocket/index.js')();
 
-// config/load
-router.get('/config/runtime', routes.getRuntimeInfo);
-router.get('/config/dataServices', routes.getDataServiceInfo);
-router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
+// connect to websocket (may be a better way?)
+app.ws(settings.supportContextRoot + '/support', function(ws, req) {
+	websocket.chat(ws);
+});
 
-
-
-// ?
-router.get('/checkstatus', checkStatus);
-
-//REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.mainContextRoot, router);
 
 // Only initialize DB after initialization of the authService is done
 var serverStarted = false;
 
+
 startServer();
+
 
 function checkStatus(req, res){
 	res.sendStatus(200);
 }
 
+
 function startServer() {
 	if (serverStarted ) return;
 	serverStarted = true;
 	app.listen(port);   
-	logger.info("Express server listening on port " + port);
+	console.log('Application started port ' + port);
 }
