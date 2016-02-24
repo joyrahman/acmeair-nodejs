@@ -12,6 +12,6 @@ ENV VCAP_APP_PORT=80
 
 #UPDATE IP BELOW
 ENV CUSTOMER_SERVICE=nginx/acmeair
-ENV MONGO_HOST=mongo1
+ENV MONGO_HOST=session_db
 
 CMD node authservice_app.js 

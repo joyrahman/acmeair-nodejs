@@ -1,73 +1,73 @@
-db1:
-  container_name: mongo1
+session_db:
+  container_name: session_db
   image: mongo
   net: ${NETWORK}
     
-db2:
-  container_name: mongo2
+booking_db:
+  container_name: booking_db
   image: mongo
   net: ${NETWORK}
     
-db3:
-  container_name: mongo3
+customer_db:
+  container_name: customer_db
   image: mongo
   net: ${NETWORK}
     
-db4:
-  container_name: mongo4
+flight_db:
+  container_name: flight_db
   image: mongo
   net: ${NETWORK}
 
-node1: 
-  container_name: node1
+main_service_node1: 
+  container_name: main_service_node1
   build: .
   dockerfile: Dockerfile_main
   net: ${NETWORK}
   volumes:
     - "./:/src/"
 
-node2:
-  container_name: node2
+auth_service_node1:
+  container_name: auth_service_node1
   build: .
   dockerfile: Dockerfile_as
   net: ${NETWORK}
   volumes:
     - "./:/src/"
   volumes_from:
-    - db1
+    - session_db
 
-node3:
-  container_name: node3
+booking_service_node1:
+  container_name: booking_service_node1
   build: .
   dockerfile: Dockerfile_bs
   net: ${NETWORK}
   volumes:
     - "./:/src/"
   volumes_from:
-    - db2
+    - booking_db
 
-node4:
-  container_name: node4
+customer_service_node1:
+  container_name: customer_service_node1
   build: .
   dockerfile: Dockerfile_cs
   net: ${NETWORK}
   volumes:
     - "./:/src/"
   volumes_from:
-    - db3
+    - customer_db
 
-node5:
-  container_name: node5
+flight_service_node1:
+  container_name: flight_service_node1
   build: .
   dockerfile: Dockerfile_fs
   net: ${NETWORK}
   volumes:
     - "./:/src/"
   volumes_from:
-    - db4
+    - flight_db
     
-node6:
-  container_name: node6
+support_service_node1:
+  container_name: support_service_node1
   build: .
   dockerfile: Dockerfile_ss
   net: ${NETWORK}
@@ -84,9 +84,9 @@ nginx:
   volumes:
     - /www/public
   volumes_from:
-    - node1
-    - node2
-    - node3
-    - node4
-    - node5
-    - node6
+    - main_service_node1
+    - auth_service_node1
+    - booking_service_node1
+    - customer_service_node1
+    - flight_service_node1
+    - support_service_node1

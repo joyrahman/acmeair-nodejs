@@ -103,5 +103,5 @@ function startServer() {
 	if (serverStarted ) return;
 	serverStarted = true;
 	app.listen(port);   
-	logger.info("Express server listening on port " + port);
+	console.log("Express server listening on port " + port);
 }
