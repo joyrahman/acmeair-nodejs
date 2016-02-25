@@ -69,7 +69,7 @@ app.use(cookieParser());                  				// parse cookie
 var websocket = new require('./websocket/index.js')();
 
 // connect to websocket (may be a better way?)
-app.ws(settings.supportContextRoot + '/support', function(ws, req) {
+app.ws(settings.supportContextRoot + '/supportrequest', function(ws, req) {
 	websocket.chat(ws);
 });
 

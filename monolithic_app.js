@@ -78,7 +78,7 @@ var loader = new require('./loader/loader.js')(routes, settings);
 var websocket = new require('./websocket/index.js')();
 
 // connect to websocket (may be a better way?)
-app.ws(ctxRoot+ '/support', function(ws, req) {
+app.ws(ctxRoot+ '/supportrequest', function(ws, req) {
 	websocket.chat(ws);
 });
 
