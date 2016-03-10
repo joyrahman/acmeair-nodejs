@@ -473,7 +473,6 @@ module.exports = function (dbtype, settings) {
 		if (settings.useFlightDataRelatedCaching) {
 			segment = flightSegmentCache.get(fromAirport+toAirport);
 			if (segment) {
-				console.log("you");
 				("cache hit - flightsegment search, key = " + fromAirport+toAirport);
 				callback(null, (segment == "NULL" ? null : segment));
 				return;
@@ -483,7 +482,6 @@ module.exports = function (dbtype, settings) {
 
 		dataaccess.findBy(module.dbNames.flightSegmentName,{originPort: fromAirport, destPort: toAirport},function(err, docs) {
 			if (err) {
-				console.log("do: " + err)
 				callback (err, null);
 			}
 			else {

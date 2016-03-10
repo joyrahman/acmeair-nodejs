@@ -30,7 +30,7 @@ module.exports = function (settings) {
     var log4js = require('log4js');
     
     log4js.configure('log4js.json', {});
-    var logger = log4js.getLogger('dataaccess/couch');
+    var logger = log4js.getLogger('dataaccess/cloudant');
     logger.setLevel(settings.loggerLevel);
 
     module.dbNames = {
@@ -41,9 +41,9 @@ module.exports = function (settings) {
     		customerSessionName:"n_customersession",
     		airportCodeMappingName:"n_airportcodemapping"
     }
-    
+
     var dbConfig = calculateDBConfig();
-    var nano = require('nano')(dbConfig.hosturl); // may need to set the connection pool here.
+    var nano = require('nano')(dbConfig.url); // may need to set the connection pool here.
 
     // TODO does cache the db by dbName improve performance?
     var nanoDBs = {};
@@ -52,8 +52,8 @@ module.exports = function (settings) {
     nanoDBs[module.dbNames.customerName]=nano.db.use(module.dbNames.customerName);
     nanoDBs[module.dbNames.customerSessionName]=nano.db.use(module.dbNames.customerSessionName);
     nanoDBs[module.dbNames.flightName]=nano.db.use(module.dbNames.flightName);
-    nanoDBs[module.dbNames.flightSegmentName]=nano.db.use(module.dbNames.flightSegmentName);  
-    
+    nanoDBs[module.dbNames.flightSegmentName]=nano.db.use(module.dbNames.flightSegmentName);
+
     module.initializeDatabaseConnections = function(callback/*(error)*/) {
     	// do nothing
     	callback(null);
@@ -64,35 +64,72 @@ module.exports = function (settings) {
 		var dbConfig ;
 		if(process.env.VCAP_SERVICES){
 			var env = JSON.parse(process.env.VCAP_SERVICES);
-	        longger.log("env: %j",env);
+	        logger.info("env: %j",env);
 			var serviceKey = Object.keys(env)[0];
 			dbConfig = env[serviceKey][0]['credentials'];
 		}
 		if ( ! dbConfig ) {
-			if(process.env.COUCH_URL){
-				dbConfig = {"hosturl":process.env.COUCH_URL};
+			if(process.env.CLOUDANT_URL){
+				dbConfig = {"hosturl":process.env.CLOUDANT_URL};
 			}
 		}
 		if ( ! dbConfig ) {
 			dbConfig = {
-		    "host":settings.couch_host,
-		    "port": settings.couch_port || 443,
-		    "username":settings.couch_username,
-		    "password":settings.couch_password
+		    "host":settings.cloudant_host,
+		    "port": settings.cloudant_port || 443,
+		    "username":settings.cloudant_username,
+		    "password":settings.cloudant_password
 		    }
 		}
 		if ( ! dbConfig.hosturl){
-			if (settings.couch_connection == "http") {
-				dbConfig.hosturl = settings.couch_connection + "://"+dbConfig.host+":"+ dbConfig.port;
-			} else {
-				dbConfig.hosturl = settings.couch_connection + "://"+dbConfig.username+":"+dbConfig.password+"@"+dbConfig.host+":"+ dbConfig.port;
-			}
-		}
+			dbConfig.hosturl = "https://"+dbConfig.username+":"+dbConfig.password+"@"+dbConfig.host+":"+ dbConfig.port;
+	    }
+		logger.info("Cloudant config:"+JSON.stringify(dbConfig));
 		return dbConfig;
 	}
 
+	module.initialize = function (callback) {
+    	var itemsProcessed = 0;
+    	for(var dbName in module.dbNames){
+		    (function(tempDbName){
+ 			  nano.db.destroy(tempDbName, function() {
+    			nano.db.create(tempDbName, function() {
+					  if (tempDbName == 'n_booking'){
+					    nanoDBs[tempDbName].insert({ "views": {},"language": "javascript","indexes":{ "n_bookings":{ "analyzer": "standard", "index":"function(doc){index(\"default\", doc._id);if(doc.customerId){index(\"customerId\", doc.customerId, {\"store\": \"yes\"});}}"}}},
+					      '_design/view', function (error, response) {console.log(tempDbName + " Search Index is created");});
+					  }
+					  if (tempDbName == 'n_flight'){
+					    nanoDBs[tempDbName].insert({ "views": {},"language": "javascript","indexes":{ "n_flights":{ "analyzer": "standard", "index":"function(doc){index(\"default\", doc._id);if(doc.flightSegmentId){index(\"flightSegmentId\", doc.flightSegmentId, {\"store\": \"yes\"});}if(doc.scheduledDepartureTime){index(\"scheduledDepartureTime\", doc.scheduledDepartureTime, {\"store\": \"yes\"});}}"}}},
+					      '_design/view', function (error, response) {console.log(tempDbName + " Search Index is created");});
+					  }
+					  if (tempDbName == 'n_flightsegment'){
+					    nanoDBs[tempDbName].insert({ "views": {},"language": "javascript","indexes":{ "n_flightsegments":{ "analyzer": "standard", "index":"function(doc){index(\"default\", doc._id);if(doc.originPort){index(\"originPort\", doc.originPort, {\"store\": \"yes\"});}if(doc.destPort){index(\"destPort\", doc.destPort, {\"store\": \"yes\"});}}"}}},
+					      '_design/view', function (error, response) {console.log(tempDbName + " Search Index is created");});
+					  }
+					  if (tempDbName == 'n_customersession'){
+					    nanoDBs[tempDbName].insert({ "views": {},"language": "javascript","indexes":{ "n_customersessions":{ "analyzer": "standard", "index":"function(doc){index(\"default\", doc._id);if(doc.customerid){index(\"customerid\", doc.customerid, {\"store\": \"yes\"});}}"}}},
+					      '_design/view', function (error, response) {console.log(tempDbName + " Search Index is created");});
+					  }
+					  
+ 				  itemsProcessed++;
+    				if(itemsProcessed === Object.keys(module.dbNames).length) {
+    				  nano.db.list(function(err, body) {
+    				    // body is an array
+    					  console.log("List all the Cloudant DB");
+    				    body.forEach(function(db) {
+    				      console.log(db);
+    				    });
+    				  });
+					  callback();
+    				}   				  
+    			});
+    		  });
+			})(module.dbNames[dbName]);
+    	}
+	};
+
+
     module.insertOne = function (collectionname, doc, callback /* (error, doc) */) {
-    	
     	nanoDBs[collectionname].insert(doc, doc._id, function(err, doc){
 			if (err) {
 				logger.error(err);
@@ -132,14 +169,11 @@ module.exports = function (settings) {
 			if (!err)
 			{
 				var revision = headers.etag;
-				
 				revision = revision.substring(1, revision.length-1);
 			    callback(null, revision);
 			}
-			else {
-				callback(err, null);
-			}
-		});
+			else callback(err, null);
+		})
 	}
 
     module.remove = function (collectionname, condition, callback /* (error) */) {
@@ -147,86 +181,29 @@ module.exports = function (settings) {
     		if (!err)
     		{
     			nanoDBs[collectionname].destroy(condition._id, revision, function(error, body) {
-    				if (error) {
-    					callback (error)
-    				} else {
-    					callback(null);
-    				}
+    				callback(error);
     			});
     		}
-    		else { 
-    			callback(err);
-    		}
+    		else callback(err);
     	}); 
 	};
 	
-		
-	module.removeAll = function (collectionname, callback /* (error) */) {
-		
-		nano.db.destroy(collectionname, function(err, body) {
-			nano.db.create(collectionname, function(err, body) {
-				if (err)
-					callback(err); 
-				else {
-					// TODO: Create views for the findBy function to search on - there may be a better way to do this...
-					
-					if (collectionname == module.dbNames.flightSegmentName){
-						nanoDBs[collectionname].insert(
-								{ "views": 
-								{ "n_flightsegments": 
-								{ "map": function(doc) {
-									  emit([doc.originPort, doc.destPort],doc);
-								} } 
-								}
-								}, '_design/view', function (error, response) { console.log(response);});
-					}
-					if (collectionname == module.dbNames.flightName){
-						nanoDBs[collectionname].insert(
-								{ "views": 
-								{ "n_flights": 
-								{ "map": function(doc) {
-									  emit([doc.flightSegmentId, doc.scheduledDepartureTime],doc);
-								} } 
-								}
-								}, '_design/view', function (error, response) { console.log(response);});
-					}
-					if (collectionname == module.dbNames.bookingName){
-						nanoDBs[collectionname].insert(
-								{ "views": 
-								{ "n_bookings": 
-								{ "map": function(doc) {
-									  emit([doc.customerId],doc);
-								} } 
-								}
-								}, '_design/view', function (error, response) { console.log(response);});
-					}
-					callback(null);
-				}
-			});
-		});	 		 
-	};
-	
 	module.findBy = function(collectionname, condition, callback /*(error, docs*/){
+		var searchCriteria = "";
 		
-		
-		// TODO: Ignoring JSON here in condition, probably should find a way to do this with the JSON.
-		
-		var queryKey = [];
-		for (var attrName in condition) {
-			queryKey.push(condition[attrName]);
+		for(var attrName in condition){
+			if (searchCriteria.length !=0)
+				searchCriteria += " AND ";
+			searchCriteria += attrName+":"+JSON.stringify(condition[attrName]);
 		}
-
-		logger.debug("Querying view " + collectionname + "s in collection " + collectionname + " with key: " + queryKey);
 		
-		nanoDBs[collectionname].view('view',collectionname + 's', {key: queryKey}, function (error, view) {
-			if (error) {
-				logger.error("Hit error:"+error);
-				callback (error, null);
-			} else {
-				logger.debug("Success, returning" + view.rows)
-				callback(null, getDocumentFromQuery(view.rows));
-			}
-				
+		logger.debug("search:" + searchCriteria);
+		nanoDBs[collectionname].search("view", collectionname+"s", {q: searchCriteria,include_docs:true},function(err, docs){
+			if (err) {
+				logger.error("Hit error:"+err);
+				callback (err, null);
+			}else
+				callback(err, getDocumentFromQuery(docs));
 		});
 	}
 
@@ -234,28 +211,22 @@ module.exports = function (settings) {
 	{
 		logger.debug("translate document from query:"+JSON.stringify(document));
 		var docs = [];
-		for (i=0; i<document.length; i++)
-			docs[i] = document[i].value;
+		for (i=0; i<document.total_rows; i++)
+			docs[i] = document.rows[i].doc;
 		logger.debug("translated document from query:"+JSON.stringify(docs));
 		return docs;
 	}
 
 	module.count = function(collectionname, condition, callback/* (error, docs) */) {
 		nano.db.get(collectionname,function(err, body){
-			if (err){
-				logger.error("count hit error:"+err);
-				callback(err, -1);
-			}
-			else{
-				// Do not count view
-				if (collectionname ==  module.dbNames.flightSegmentName || collectionname ==  module.dbNames.flightName || 
-						collectionname ==  module.dbNames.bookingName) {
-					callback(null, body.doc_count-1);
-				} else {
-					callback(null, body.doc_count);
-				}
-			}
-		});
+          if (err){
+			logger.error("count hit error:"+err);
+			callback(err, -1);
+		  }
+		  else{
+            callback(null, body.doc_count);
+		  }
+        });
 	};
 	
 	return module;
