@@ -30,7 +30,7 @@ var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
 
-var dbtype = process.env.dbtype || "mongo";
+var dbtype = process.env.dbtype || "couch";
 
 // Calculate the backend datastore type if run inside BLuemix or cloud foundry
 if(process.env.VCAP_SERVICES){
@@ -88,7 +88,7 @@ router.get('/login/logout', logout);
 
 // flight service
 
-router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
+router.post('/flights/queryflights', routes.queryflights);
 router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
 router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
 router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);

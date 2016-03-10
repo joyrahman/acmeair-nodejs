@@ -199,7 +199,7 @@ module.exports = function (settings, dbName) {
 		dbclient.collection(collectionname,function(error, collection){
 
 			  if (error){
-				  console.log("remove hit error:"+error);
+				  logger.info("remove hit error:"+error);
 				  callback(error, null);
 			  }
 			  else{
@@ -220,7 +220,7 @@ module.exports = function (settings, dbName) {
 		dbclient.collection(collectionname,function(error, collection){
 
 			  if (error){
-				  console.log("remove hit error:"+error);
+				  logger.info("remove hit error:"+error);
 				  callback(error);
 			  } else {
 				  collection.remove({}, function(err, numDocs) {

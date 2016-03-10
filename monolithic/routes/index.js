@@ -422,12 +422,11 @@ module.exports = function (dbtype, settings) {
 		logger.debug("getFlightByAirportsAndDepartureDate " + fromAirport + " " + toAirport + " " + flightDate);
 						
 		getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, function(error, flightsegment) {
+						
 			if (error) {
-				logger.error("Hit error:"+error);
 				throw error;
 			}
 			
-			logger.debug("flightsegment = " + JSON.stringify(flightsegment));
 			if (!flightsegment) {
 				callback(null, null, null);
 				return;
@@ -470,18 +469,23 @@ module.exports = function (dbtype, settings) {
 
 	function getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, callback /* error, flightsegment */) {
 		var segment;
-		
+	
 		if (settings.useFlightDataRelatedCaching) {
 			segment = flightSegmentCache.get(fromAirport+toAirport);
 			if (segment) {
+				console.log("you");
 				("cache hit - flightsegment search, key = " + fromAirport+toAirport);
 				callback(null, (segment == "NULL" ? null : segment));
 				return;
 			}
 			("cache miss - flightsegment search, key = " + fromAirport+toAirport + ", flightSegmentCache size = " + flightSegmentCache.size());
 		}
+
 		dataaccess.findBy(module.dbNames.flightSegmentName,{originPort: fromAirport, destPort: toAirport},function(err, docs) {
-			if (err) callback (err, null);
+			if (err) {
+				console.log("do: " + err)
+				callback (err, null);
+			}
 			else {
 				segment = docs[0];
 				if (segment == undefined) {

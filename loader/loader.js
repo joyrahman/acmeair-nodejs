@@ -100,9 +100,9 @@ module.exports = function (loadUtil,settings) {
 	}
 
 	function insertCustomer(customer, callback) {
-		logger.debug('customer to insert = ' + JSON.stringify(customer));
+		logger.info('customer to insert = ' + JSON.stringify(customer));
 		loadUtil.insertOne(loadUtil.dbNames.customerName, customer, function(error, customerInserted) {
-			logger.debug('customer inserted = ' + JSON.stringify(customerInserted));
+			logger.info('customer inserted = ' + JSON.stringify(customerInserted));
 			callback();
 		});
 	}
@@ -164,8 +164,9 @@ module.exports = function (loadUtil,settings) {
 		logger.info('starting loading database');
 		
 		loadUtil.removeAll(loadUtil.dbNames.customerName, function(err) {
+			logger.info('#number of customers = ' + customers.length);
 			if (err) {
-				logger.debug(err);
+				logger.error(err);
 			} else {		
 				createCustomers(numCustomers, function() {
 					logger.info('number of customers = ' + customers.length);

@@ -24,17 +24,16 @@
 	"mongoPort" : 27017,
 	"mongoConnectionPoolSize": 10,
 
-	"cloudant_host": "your host",
-	"cloudant_port": 443,
-	"cloudant_username": "your username",
-	"cloudant_password":"your password",
-	"cloudant_httpclient.maxTotal":200,
-	"cloudant_httpclient.maxPerRoute":100,
-	"cloudant_httpclient.soTimeout":5000,
-	"cloudant_httpclient.connectionTimeout":5000,
+	"couch_connection": "http",
+	"couch_host": "localhost",
+	"couch_port": 5984,
+	"couch_username": "your username",
+	"couch_password":"your password",
+	"couch_httpclient.maxTotal":200,
+	"couch_httpclient.maxPerRoute":100,
+	"couch_httpclient.soTimeout":5000,
+	"couch_httpclient.connectionTimeout":5000,
 
-	"cassandra_contactPoints" : ["your ip"],
-	"cassandra_keyspace" : "acmeair_keyspace",
 
 	"useFlightDataRelatedCaching" : true,
 	
