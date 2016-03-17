@@ -30,7 +30,7 @@ var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
 
-var dbtype = process.env.dbtype || "couch";
+var dbtype = process.env.dbtype || "mongo";
 
 // Calculate the backend datastore type if run inside BLuemix or cloud foundry
 if(process.env.VCAP_SERVICES){
