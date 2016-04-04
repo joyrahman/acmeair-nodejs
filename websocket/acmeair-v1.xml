@@ -23,12 +23,13 @@
             <folder label="Live Content" id="folder_fromAirport">
                 <input>
                     <grammar>
-                        <item>$ reservation</item>
-                        <item>$ reservation *</item>
+                        <item>$ search</item>
+                        <item>$ search *</item>
                     </grammar>
                     <output>
                         <prompt selectionType="RANDOM">
-                            <item>What is your departure airport?</item>
+                            <item>In order to search the flights, I need some information:
+                            What is your departure airport?</item>
                         </prompt>
                         <getUserInput>
                             <input>
@@ -96,6 +97,7 @@
 		<folder label="Concepts">
             <concept>
                 <grammar>
+                    <item>search</item>
                     <item>reservation</item>
                     <item>reserve</item>
                     <item>book</item>

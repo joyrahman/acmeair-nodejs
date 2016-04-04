@@ -134,7 +134,7 @@ module.exports = function(loadUtil,settings) {
 					        			  "\nArrival : " + (index == 0 ? profile.name_values[1].value : profile.name_values[0].value ) + " " + entry['scheduledArrivalTime'] + "\n :"}));
 					        	  
 					        	  });
-							  	  ws.send(JSON.stringify({"agent" : "Watson", "message":"Is there anything else that I can help you with?"}));
+							  	  ws.send(JSON.stringify({"agent" : "Watson", "message":"Please login and reserve flights for reservation in the flights tab.\nIs there anything else that I can help you with?"}));
 					          });
 					      });
 					  	}
