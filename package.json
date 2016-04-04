@@ -22,6 +22,8 @@
     "cassandra-driver":"2.0.x",
     "stats-lite":"1.0.3",
     "circuit-breaker":"0.0.4",
-    "ws":"1.0.x"
+    "ws":"^1.0.0",
+	"debug": "^2.0.0",
+    "watson-developer-cloud": "^1.0.0"
   }
 }

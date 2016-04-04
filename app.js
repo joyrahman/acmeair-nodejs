@@ -85,7 +85,7 @@ logger.info("db type=="+dbtype);
 
 var routes = new require('./routes/index.js')(dbtype, authService, settings);
 var loader = new require('./loader/loader.js')(routes, settings);
-var websocket = new require('./websocket/index.js')();
+var websocket = new require('./websocket/index.js')(routes, settings);
 
 // Setup express with 4.0.0
 
@@ -164,8 +164,9 @@ if (authService && authService.hystrixStream)
 //REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.contextRoot, router);
 
-
-var wss = new ws({port:8080});
+//NOTE: Websocket must have its own port number. It has to be a microservice
+//Current code conflicts the port number with HTTP & chat will not function.
+var wss = new ws({port:(process.env.VCAP_APP_PORT || settings.websocketPort)});
 wss.on('connection', websocket.chat);
 
 // Only initialize DB after initialization of the authService is done

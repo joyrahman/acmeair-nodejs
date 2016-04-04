@@ -14,46 +14,136 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function() {
+module.exports = function(loadUtil,settings) {
 	var module = {};
-	var uuid = require('node-uuid');
+	var debug = require('debug')('websocket');
+	var watson = require('watson-developer-cloud');
+	var vcapUrl = null;
+	var vcapUsername = null;
+	var vcapPassword = null;
+    if (process.env.VCAP_SERVICES) {
+        var services = JSON.parse(process.env.VCAP_SERVICES);
+        for (var service_name in services) {
+            if (service_name.indexOf('dialog') === 0) {
+                var service = services[service_name][0];
+                vcapUrl = service.credentials.url;
+                vcapUsername = service.credentials.username;
+                vcapPassword = service.credentials.password;
+            }
+        }
+    }
+	var dialog = watson.dialog({
+		        url: vcapUrl || settings.watsontUrl,
+				username : vcapUsername || settings.watsonUsername,
+				password : vcapPassword || settings.watsonPassword,
+				version : settings.watsonVersion
+			});
 	
+	var dialog_id = null;
+	dialog.getDialogs({}, function (err, dialogs) {
+		  if (err)
+		    console.log('error:', err);
+		  else
+			  debug ('Dialogs : ', dialogs );
+		    var doesDialogExist = false;
+		    dialogs.dialogs.filter(function(item) {
+			    if( item.name == settings.watsonDialogName){
+			    	debug ('Item : ', item );
+			    	debug ('dialog_id : ', item.dialog_id );
+			    	dialog_id = item.dialog_id;
+			    	doesDialogExist = true;
+			    	//To update the dialog, set watsonUpdateDialog true, and update watsonDialogFile.
+			    	if (settings.watsonUpdateDialog){
+				    	var fs = require('fs');
+				    	var params = {
+				    			dialog_id: dialog_id,
+				    			file: fs.createReadStream('./websocket/' + settings.watsonDialogFile)
+						};
+					    dialog.updateDialog(params, function(err, update){
+					    	debug ('Update Message : ',update);
+					    	debug ('Error : ',err);
+					    });
+					}else {
+			    		debug ("NO DIALOG UPDATE");
+			    	}
+			    }
+			});
+		    /*If the Dialog does not exist, create the dialog.
+		     * Set the Dialog name & file name in settings.json
+		     */
+		    if (!doesDialogExist){
+		    	var fs = require('fs');
+		    	var params = {
+					  name: settings.watsonDialogName,
+					  file: fs.createReadStream('./websocket/' + settings.watsonDialogFile)
+				};
+			    dialog.createDialog(params, function(err, newDialog){
+			    	debug ('dialog name : ',settings.watsonDialogName);
+			    	debug ('Error : ',err);
+			    	debug ('dialog_id : ', newDialog.dialog_id );
+			    	dialog_id = newDialog.dialog_id;
+			    });
+		    }
+		});
+
 	module.chat = function(ws) {
-		var supportAgent = "Support";
-		supportAgent = getRandomSupportAgent();
-		ws.send(greeting(supportAgent));
-		ws.on('open', function open() {
-			console.log("Open Called");
-			ws.send(greeting(supportAgent));
-		});
-		ws.on('message', function (message){
-			ws.send(supportResponse(supportAgent));
-		});
-	}
-	
-	/**
-	 * min - inclusive
-	 * max - exclusive
-	 */
-	function getRandomInt(min, max) {
-		return Math.floor(Math.random() * (max - min)) + min;
-	}
-	
-	function getRandomSupportAgent() {
-		var supportStaffNames = ["Bob", "Bill", "Beth", "Don", "Jim", "Kate", 
-		                         "Matt", "Mike","Nick","Rick","Steve","Tina","Tom"];
-		return supportStaffNames[getRandomInt(0,supportStaffNames.length)];
-	}
-	
-	function greeting(agentName) {
-		return JSON.stringify({"agent" : agentName,
-			"message" : "Welcome to AcmeAir Support. My name is " + 
-			  agentName + ". How can I help you?"});
-	}
-	
-	function supportResponse(agentName) {
-		return JSON.stringify({"agent" : agentName,
-			"message" : "One moment please..."});
+		ws.send(JSON.stringify({"agent" : "Server Message", "message":"Please wait for a moment. Agent will be with you shortly."}));
+	    var params = { dialog_id: dialog_id};
+	    dialog.conversation(params, function(err, results) {
+		  	    if (err)
+		  	      return next(JSON.stringify(err, null, 2));
+		  	    else
+			  	  debug ('Results : ' , results);
+		  	      debug ('conversation_id : ' , results.conversation_id);
+		  	      debug ('client_id : ' , results.client_id);
+		  	      ws.send(JSON.stringify({"agent" : "Watson", "message":results.response[0]}));
+		  		  ws.on('message', function message(message){
+		  			params = { dialog_id: dialog_id, conversation_id: results.conversation_id, input: message};
+		  			//params = { dialog_id: dialog_id, conversation_id: results.conversation_id, client_id: results.client_id, input: message};
+					dialog.conversation(params, function message(err, results) {
+					  if (err)
+					    return next(JSON.stringify(err, null, 2));
+					  else
+						debug ('Results : ' , results);
+					  	debug ('conversation_id : ' , results.conversation_id);
+					  	debug ('client_id : ' , results.client_id);
+					  	client_id = results.client_id;
+					  	conversation_id = results.conversation_id;
+					  	ws.send(JSON.stringify({"agent" : "Watson", "message":results.response[0]}));
+					  	if (results.response[0].indexOf('Itinerary') > -1 ){
+					  	  debug ('End of conversation');
+					  	  params = { dialog_id: dialog_id, client_id: results.client_id};
+					  	  dialog.getProfile(params, function(err, profile) {
+					        if (err)
+					          return next(JSON.stringify(err, null, 2));
+					        else
+					          loadUtil.searchFlights(profile.name_values[0].value, profile.name_values[1].value, profile.name_values[2].value=='true', new Date(), new Date(), function(values){
+					        	  values.tripFlights.forEach(function(entries, index) {
+					        		  entry = entries.flightsOptions[0];
+					        		  debug({"agent" : "Watson", "message": 
+					        			  (index == 0 ? "OUTBOUND - " : "INBOUND - " ) +
+					        			  "Airplane : " + entry['airplaneTypeId'] + 
+					        			  "Flight : " + entry['flightSegmentId'] + 
+					        			  "Departure : " + (index == 0 ? profile.name_values[0].value : profile.name_values[1].value ) + " " + entry['scheduledDepartureTime'] +
+					        			  "Arrival : " + (index == 0 ? profile.name_values[1].value : profile.name_values[0].value ) + " " + entry['scheduledArrivalTime']});
+					        		  ws.send(JSON.stringify({"agent" : "Watson", "message": 
+					        			  (index == 0 ? "OUTBOUND - " : "INBOUND - " ) +
+					        			  " Airplane : " + entry['airplaneTypeId'] + 
+					        			  " Flight : " + entry['flightSegmentId'] + 
+					        			  "\nDeparture : " + (index == 0 ? profile.name_values[0].value : profile.name_values[1].value ) + " " + entry['scheduledDepartureTime'] +
+					        			  "\nArrival : " + (index == 0 ? profile.name_values[1].value : profile.name_values[0].value ) + " " + entry['scheduledArrivalTime'] + "\n :"}));
+					        	  
+					        	  });
+							  	  ws.send(JSON.stringify({"agent" : "Watson", "message":"Is there anything else that I can help you with?"}));
+					          });
+					      });
+					  	}
+					});
+				  });
+		  		  ws.on('close', function close() {
+		  		    debug('disconnected');
+		  		  });
+		  	  });
 	}
 	
 	return module;

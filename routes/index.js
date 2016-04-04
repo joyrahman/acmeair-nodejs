@@ -16,6 +16,7 @@
 
 module.exports = function (dbtype, authService, settings) {
     var module = {};
+    var debug = require('debug')('routes');
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
 	var http = require('http')
@@ -29,6 +30,7 @@ module.exports = function (dbtype, authService, settings) {
 
 	var daModuleName = "../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
+	debug("Use dataaccess:", daModuleName);
 	var dataaccess = new require(daModuleName)(settings);
 	
 	module.dbNames = dataaccess.dbNames
@@ -121,20 +123,29 @@ module.exports = function (dbtype, authService, settings) {
 	};
 
 	module.queryflights = function(req, res) {
-		logger.debug('querying flights');
-		
 		var fromAirport = req.body.fromAirport;
 		var toAirport = req.body.toAirport;
+		var oneWay = (req.body.oneWay == 'true');
 		var fromDateWeb = new Date(req.body.fromDate);
+		var returnDateWeb = new Date(req.body.returnDate);
+		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, function(values){
+			res.send(values)
+			
+		});
+	}
+	
+	module.searchFlights = function (fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
+		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback);
+	}
+	function searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
+		logger.debug('querying flights');
+		
 		//If your acmeair is in another time zone (e.g. Your browser is in EST & Acmeair server is in CST), fromDate will be 1 day behind than fromDateWeb & won't query 
 		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
-		var oneWay = (req.body.oneWay == 'true');
-		var returnDateWeb = new Date(req.body.returnDate);
 		var returnDate;
 		if (!oneWay) {
 			returnDate = new Date(returnDateWeb.getFullYear(), returnDateWeb.getMonth(), returnDateWeb.getDate()); // convert date to local timezone
 		}
-		
 		getFlightByAirportsAndDepartureDate(fromAirport, toAirport, fromDate, function (error, flightSegmentOutbound, flightsOutbound) {
 			logger.debug('flightsOutbound = ' + flightsOutbound);
 			if (flightsOutbound) {
@@ -161,7 +172,9 @@ module.exports = function (dbtype, authService, settings) {
 						 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10},
 						 {"numPages":1,"flightsOptions": flightsReturn,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
 						], "tripLegs":2};
-					res.send(options);
+					
+					debug('options', options);
+					callback(options);
 				});
 			}
 			else {
@@ -169,7 +182,7 @@ module.exports = function (dbtype, authService, settings) {
 					[
 					 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
 					], "tripLegs":1};
-				res.send(options);
+				callback(options);
 			}
 		});
 	};
@@ -422,7 +435,6 @@ module.exports = function (dbtype, authService, settings) {
 	    dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) 
 	}
 
-
 	function getFlightByAirportsAndDepartureDate(fromAirport, toAirport, flightDate, callback /* error, flightSegment, flights[] */) {
 		logger.debug("getFlightByAirportsAndDepartureDate " + fromAirport + " " + toAirport + " " + flightDate);
 						
@@ -485,6 +497,10 @@ module.exports = function (dbtype, authService, settings) {
 			}
 			("cache miss - flightsegment search, key = " + fromAirport+toAirport + ", flightSegmentCache size = " + flightSegmentCache.size());
 		}
+		debug('module.dbNames.flightSegmentName', module.dbNames.flightSegmentName);
+		debug('fromAirport', fromAirport);
+		debug('toAirport', toAirport);
+		
 		dataaccess.findBy(module.dbNames.flightSegmentName,{originPort: fromAirport, destPort: toAirport},function(err, docs) {
 			if (err) callback (err, null);
 			else {

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dialog xsi:noNamespaceSchemaLocation="WatsonDialogDocument_1.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <flow>
+        <folder label="Main">
+            <output>
+                <prompt selectionType="RANDOM">
+                    <item>Hello, I am Watson.  What can I help you today?</item>
+                </prompt>
+                <goto ref="getUserInput_fromAirport"/>
+            </output>
+            <getUserInput id="getUserInput_fromAirport">
+                <search ref="folder_fromAirport"/>
+                <default>
+                    <output>
+                        <prompt selectionType="RANDOM">
+                            <item>I am sorry, I did not understand your question. Please rephrase your question.</item>
+                        </prompt>
+                    </output>
+                </default>
+            </getUserInput>
+        </folder>
+        <folder label="Library">
+            <folder label="Live Content" id="folder_fromAirport">
+                <input>
+                    <grammar>
+                        <item>$ reservation</item>
+                        <item>$ reservation *</item>
+                    </grammar>
+                    <output>
+                        <prompt selectionType="RANDOM">
+                            <item>What is your departure airport?</item>
+                        </prompt>
+                        <getUserInput>
+                            <input>
+                                <grammar>
+                                    <item>$ (Airports)={Departure}</item>
+                                    <item>$ (Airports)={Departure} *</item>
+                                </grammar>
+                                    <action varName="Departure" operator="SET_TO">{Departure.value:main}</action>
+                                <output>
+									<prompt selectionType="RANDOM">
+                                        <item>What is your arrival airport?</item>
+                                    </prompt>
+                                    <getUserInput>
+                                        <input>
+                                            <grammar>
+                                                <item>$ (Airports)={Arrival}</item>
+                                                <item>$ (Airports)={Arrival} *</item>
+                                            </grammar>
+                                            <action varName="Arrival" operator="SET_TO">{Arrival.value:main}</action>
+                                            <output>
+                                                <prompt selectionType="RANDOM">
+                                                    <item>Round Trip?</item>
+                                                </prompt>
+                                                <getUserInput>
+                                                    <input>
+                                                        <grammar>
+                                                            <item>$ Yes</item>
+                                                            <item>$ Yes *</item>
+                                                        </grammar>
+                                                        <action varName="Oneway" operator="SET_TO">false</action>
+			            								<goto ref="Summary"/>
+                                                    </input>
+                                                    <input>
+                                                        <grammar>
+                                                            <item>$ No</item>
+                                                            <item>$ No *</item>
+                                                        </grammar>
+                                                        <action varName="Oneway" operator="SET_TO">true</action>
+			            								<goto ref="Summary"/>
+                                                    </input>
+                                                </getUserInput>
+                                            </output>
+                                        </input>
+                                    </getUserInput>
+								</output>
+                            </input>
+                        </getUserInput>
+                    </output>
+                </input>
+				<input>
+                    <grammar>
+                        <item>$ No</item>
+                        <item>$ No*</item>
+                        <item>$ No *</item>
+                    </grammar>
+					<output>
+					    <prompt selectionType="RANDOM">
+                            <item>Thank you for choosing Acmeair!</item>
+                        </prompt>
+					</output>
+				</input>
+            </folder>
+            <folder label="Storage"/>
+        </folder>
+		<folder label="Concepts">
+            <concept>
+                <grammar>
+                    <item>reservation</item>
+                    <item>reserve</item>
+                    <item>book</item>
+                    <item>booking</item>
+                </grammar>
+            </concept>
+        </folder>
+		<folder label="End">
+            <if id="Summary">
+                <output>
+                    <prompt selectionType="RANDOM">
+                        <item>Here is the Itinerary.</item>
+                    </prompt>
+					<search ref="folder_fromAirport"/>
+                </output>
+            </if>
+        </folder>
+        <folder label="Global"/>
+        <folder label="Concepts"/>
+    </flow>
+    <entities>
+        <entity name="Airports">
+            <value name="New York" value="JFK"/>
+            <value name="London" value="LHR"/>
+            <value name="Paris" value="CDG"/>
+            <value name="Tokyo" value="NRT"/>
+            <value name="Hong Kong" value="HKG"/>
+        </entity>
+    </entities>
+    <constants>
+        <var_folder name="Home"/>
+    </constants>
+    <variables>
+        <var_folder name="Home">
+            <var name="Departure" type="TEXT" description="Departure Airport"/>
+            <var name="Arrival" type="TEXT" description="Arrival Airport"/>
+            <var name="Oneway" type="TEXT" description="Oneway ticket"/>
+        </var_folder>
+    </variables>
+    <settings>
+        <setting name="USERIDNUM" type="USER">69810</setting>
+        <setting name="EMAIL" type="USER">mwacho@gmail.com</setting>
+        <setting name="PASSWORD" type="USER">mct:f972618f697988c5f1808da2115a54f0</setting>
+        <setting name="FIRSTNAME" type="USER">Matthew</setting>
+        <setting name="LASTNAME" type="USER">james Wachowiak</setting>
+        <setting name="COUNTRY" type="USER">US</setting>
+        <setting name="STATE" type="USER"></setting>
+        <setting name="CITY" type="USER">New York</setting>
+        <setting name="BDAY" type="USER">1</setting>
+        <setting name="BMONTH" type="USER">1</setting>
+        <setting name="BYEAR" type="USER">2001</setting>
+        <setting name="SEX" type="USER">Male</setting>
+        <setting name="DISPLAYNAME" type="USER">Matthew</setting>
+        <setting name="PROVIDESECURITYPASSWORD" type="USER">false</setting>
+        <setting name="SECURITYPASSWORD" type="USER"></setting>
+        <setting name="SHOWPERSPROFILE" type="USER">false</setting>
+        <setting name="USETYPE" type="USER">0</setting>
+        <setting name="DATEJOINED" type="USER">2015-03-30 15:08:32.0</setting>
+        <setting name="LASTLOGIN" type="USER">2015-03-30 15:08:32.0</setting>
+        <setting name="LOGINCOUNT" type="USER">1</setting>
+        <setting name="CREDIT" type="USER">-100</setting>
+        <setting name="CONVCOUNT" type="USER">2</setting>
+        <setting name="PERSONALITYTYPEID" type="USER">6</setting>
+        <setting name="SHOWSENDMESSAGE" type="USER">true</setting>
+        <setting name="ACTIVATED" type="USER">true</setting>
+        <setting name="MESSENGEREMAIL" type="USER"></setting>
+        <setting name="MESSENGERPASSWORD" type="USER"></setting>
+        <setting name="SENDCHATEMAIL" type="USER">true</setting>
+        <setting name="SENDFAVEMAIL" type="USER">true</setting>
+        <setting name="CACHE" type="USER">false</setting>
+        <setting name="CLASSTYPE" type="USER">3</setting>
+        <setting name="AUTOLEARN" type="USER">false</setting>
+        <setting name="LANGUAGE" type="USER">EN</setting>
+        <setting name="RESPONSETIME" type="USER">0</setting>
+        <setting name="MAXAUTOLEARNITEMS" type="USER">0</setting>
+        <setting name="NUMAUTOSETRELATED" type="USER">0</setting>
+        <setting name="TIMEZONEID" type="USER">Australia/Sydney</setting>
+        <setting name="AUTOSETRELATEDNODEID" type="USER">0</setting>
+        <setting name="RETURNTOCHATNODEID" type="USER">0</setting>
+        <setting name="INPUTMASKTYPE" type="USER">0</setting>
+        <setting name="NUMLOGINATTEMPTS" type="USER">0</setting>
+        <setting name="CONCEPTMATCHING" type="USER">0</setting>
+    </settings>
+</dialog>

@@ -11,7 +11,17 @@
 	
 	"flightbookingservice_port": 9082,
 	"flightbookingContextRoot": "/acmeair-fbs/rest/api",
-		
+
+	"watsonUrl" : "https://gateway.watsonplatform.net/dialog/api",
+	"watsonUsername" : "92c13b89-740c-4984-8d57-0eb86d18a601",
+	"watsonPassword" : "2TkQHXm9scw8",
+	"watsonVersion" : "v1",
+	"watsonDialogFile" : "acmeair-v1.xml",
+	"watsonDialogName" : "acmeair",
+	"watsonUpdateDialog" : false,
+	"websocketPort" : 8080,
+	
+	
 	"mongoHost" : "omni.canlab.ibm.com",
 	"mongoPort" : 27017,
 	"mongoConnectionPoolSize": 10,
