@@ -141,6 +141,7 @@ module.exports = function(loadUtil,settings) {
 					});
 				  });
 		  		  ws.on('close', function close() {
+		  			ws.close();
 		  		    debug('disconnected');
 		  		  });
 		  	  });
