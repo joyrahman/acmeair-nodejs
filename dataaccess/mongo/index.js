@@ -48,16 +48,13 @@ module.exports = function (settings) {
 	    var mongo = null;
 		var mongoURI = null;
 		if(process.env.VCAP_SERVICES){
-			  var env = JSON.parse(process.env.VCAP_SERVICES);
-	             logger.info("env: %j",env);
-			  var serviceKey = Object.keys(env)[0];
-			  if (serviceKey)
-	          {
-				  mongo = env[serviceKey][0]['credentials'];                 
-	     		  logger.info("mongo: %j",mongo);
-			  }
+			var env = JSON.parse(process.env.VCAP_SERVICES);
+	        logger.info("env: %j",env);
+			mongo = env['user-provided'][0].credentials;                 
+	     	logger.info("mongo: %j",mongo);
 		}
-
+	
+	
 		// The section is for docker integration using link
 		if (mongo ==null && process.env.MONGO_PORT!=null) {
 	        logger.info(process.env.MONGO_PORT);
