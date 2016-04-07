@@ -19,6 +19,7 @@ var express = require('express')
   , fs = require('fs')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+var debug = require('debug')('acmeair');
 
 log4js.configure('log4js.json', {});
 var logger = log4js.getLogger('app');
@@ -57,6 +58,7 @@ if (authServiceLocation)
 	}
 }
 
+
 if(customerServiceLocation) 
 {
 	logger.info("Use customerservice:"+customerServiceLocation);
@@ -85,7 +87,6 @@ logger.info("db type=="+dbtype);
 
 var routes = new require('./routes/index.js')(dbtype, authService, settings);
 var loader = new require('./loader/loader.js')(routes, settings);
-var websocket = new require('./websocket/index.js')(routes, settings);
 
 // Setup express with 4.0.0
 
@@ -164,10 +165,15 @@ if (authService && authService.hystrixStream)
 //REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.contextRoot, router);
 
-//NOTE: Websocket must have its own port number. It has to be a microservice
-//Current code conflicts the port number with HTTP & chat will not function.
-var wss = new ws({port:(process.env.VCAP_APP_PORT || settings.websocketPort)});
-wss.on('connection', websocket.chat);
+
+if (settings.websocketPort != ""){
+	var websocket = new require('./websocket/index.js')(routes, settings);
+	debug("websocketPort", settings.websocketPort );
+	//NOTE: Websocket must have its own port number. It has to be a microservice
+	//Current code conflicts the port number with HTTP & chat will not function.
+	var wss = new ws({port:(process.env.VCAP_APP_PORT || settings.websocketPort)});
+	wss.on('connection', websocket.chat);
+}
 
 // Only initialize DB after initialization of the authService is done
 var initialized = false;
