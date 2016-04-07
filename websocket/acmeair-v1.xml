@@ -109,7 +109,7 @@
             <if id="Summary">
                 <output>
                     <prompt selectionType="RANDOM">
-                        <item>Here is the Itinerary.</item>
+                        <item>Searching for the Itinerary.</item>
                     </prompt>
 					<search ref="folder_fromAirport"/>
                 </output>
