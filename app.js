@@ -157,6 +157,8 @@ router.get('/loader/query', loader.getNumConfiguredCustomers);
 
 // ?
 router.get('/checkstatus', checkStatus);
+//for websocket 
+router.get('/support', routes.getSupportWSPort);
 
 if (authService && authService.hystrixStream)
 	app.get('/rest/api/hystrix.stream', authService.hystrixStream);

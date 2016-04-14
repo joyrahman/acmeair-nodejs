@@ -350,6 +350,11 @@ module.exports = function (dbtype, authService, settings) {
 		});
 	};
 	
+	module.getSupportWSPort = function(req,res) {
+		var port = settings.websocketPort.toString();
+		res.send(port);
+	};
+	
 	function countItems(dbName, callback /*(error, count)*/) {
 		console.log("Calling count on " + dbName);
 		dataaccess.count(dbName, {}, function(error, count) {

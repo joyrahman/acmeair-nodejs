@@ -42,6 +42,19 @@
     function pageLoaded() {
     	updateLoggedInUserWelcome();
     }
+	
+	var WSPort = 8080;
+	dojo.xhrGet({
+		url: "rest/api/support",
+		handleAs: "text",
+		sync: true,
+		load: function(response, ioArgs) {
+			WSPort = response;
+		},
+		error: function(response, ioArgs) {
+			alert(response);
+		}
+	});	
   </script>
   <script type="text/javascript">
       function getDateString() {
@@ -53,8 +66,8 @@
       function newlinesToBreak(string) {
     	  return string.replace(/(?:\r\n|\r|\n)/g,'<br/>');
       }
-  
-	  var chatSocket = new WebSocket("ws://"+location.hostname+":"+8080);
+
+	  var chatSocket = new WebSocket("ws://"+location.hostname+":"+WSPort); 
 	  chatSocket.onmessage = function(event) {
 		var jsonObj = JSON.parse(event.data);
 		var displayMessage = "<b>" + jsonObj.agent + "</b>: " + getDateString() + " - " + 
