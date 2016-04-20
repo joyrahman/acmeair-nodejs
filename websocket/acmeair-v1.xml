@@ -4,7 +4,7 @@
         <folder label="Main">
             <output>
                 <prompt selectionType="RANDOM">
-                    <item>Hello, I am Watson.  What can I help you today55?</item>
+                    <item>Hello, I am Watson.  What can I help you today?</item>
                 </prompt>
                 <goto ref="getUserInput_fromAirport"/>
             </output>
