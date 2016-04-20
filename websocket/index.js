@@ -91,7 +91,7 @@ module.exports = function(loadUtil,settings) {
 	    var params = { dialog_id: dialog_id};
 	    dialog.conversation(params, function(err, results) {
 		  	    if (err)
-		  	      return next(JSON.stringify(err, null, 2));
+					return JSON.stringify(err, null, 2);
 		  	    else
 			  	  debug ('Results : ' , results);
 		  	      debug ('conversation_id : ' , results.conversation_id);
