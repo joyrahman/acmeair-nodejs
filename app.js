@@ -157,8 +157,14 @@ router.get('/loader/query', loader.getNumConfiguredCustomers);
 
 // ?
 router.get('/checkstatus', checkStatus);
-//for websocket 
+
+//for websocket watson dialog service
 router.get('/support', routes.getSupportWSPort);
+
+//for REST API watson dialog service
+router.get('/WatsonSupportInit', routes.getSupportInitInfo);
+router.post('/WatsonSupportService', routes.getSupportService);
+
 
 if (authService && authService.hystrixStream)
 	app.get('/rest/api/hystrix.stream', authService.hystrixStream);

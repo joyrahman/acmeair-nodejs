@@ -24,6 +24,33 @@ module.exports = function (dbtype, authService, settings) {
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
 	
+	
+	//initialize for Watson services
+	var watson = require('watson-developer-cloud');
+	var vcapUrl = null;
+	var vcapUsername = null;
+	var vcapPassword = null;
+	
+	if (process.env.VCAP_SERVICES) {
+        var services = JSON.parse(process.env.VCAP_SERVICES);
+        for (var service_name in services) {
+            if (service_name.indexOf('dialog') === 0) {
+                var service = services[service_name][0];
+                vcapUrl = service.credentials.url;
+                vcapUsername = service.credentials.username;
+                vcapPassword = service.credentials.password;
+            }
+        }
+    }
+	
+	var dialog = watson.dialog({
+		url: vcapUrl || settings.watsontUrl,
+		username : vcapUsername || settings.watsonUsername,
+		password : vcapPassword || settings.watsonPassword,
+		version : settings.watsonVersion
+	});
+	
+	//logging configurations
 	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('routes');
 	logger.setLevel(settings.loggerLevel);
@@ -364,6 +391,148 @@ module.exports = function (dbtype, authService, settings) {
 				callback(null,count);
 			}
 		});
+	};
+	
+	module.getSupportInitInfo = function(req,res) {
+		
+		var dialog_id = null;
+		res.clearCookie('dialogID');
+		res.clearCookie('conversationID');
+		res.clearCookie('clientID');
+		
+		
+		dialog.getDialogs({}, function (err, dialogs) {
+		
+			if (err)
+				debug ('error:', err);
+			else {
+				debug ('Dialogs : ', dialogs );
+				
+				var doesDialogExist = false;
+				dialogs.dialogs.filter(function(item) {
+					if(item.name == settings.watsonDialogName){
+						debug ('Item : ', item );
+						debug ('dialog_id : ', item.dialog_id );
+						dialog_id = item.dialog_id;
+						res.cookie('dialogID', dialog_id);
+						doesDialogExist = true;
+						//To update the dialog, set watsonUpdateDialog true, and update watsonDialogFile.
+						if (settings.watsonUpdateDialog){
+							var fs = require('fs');
+							var params = {
+									dialog_id: dialog_id,
+									file: fs.createReadStream('./websocket/' + settings.watsonDialogFile)
+							};
+							dialog.updateDialog(params, function(err, update){
+								debug ('Update Message : ',update);
+								debug ('Error : ',err);
+							});
+						}else {
+							debug ("NO DIALOG UPDATE");
+						}
+					}
+				});
+				/*If the Dialog does not exist, create the dialog.
+				 * Set the Dialog name & file name in settings.json
+				 */
+				if (!doesDialogExist){
+					var fs = require('fs');
+					var params = {
+						  name: settings.watsonDialogName,
+						  file: fs.createReadStream('./websocket/' + settings.watsonDialogFile)
+					};
+					dialog.createDialog(params, function(err, newDialog){
+						debug ('dialog name : ',settings.watsonDialogName);
+						debug ('Error : ',err);
+						debug ('dialog_id : ', newDialog.dialog_id );
+						dialog_id = newDialog.dialog_id;
+						res.cookie('dialogID', dialog_id);
+					});
+				}
+			}
+			res.send(JSON.stringify({"agent" : "Server Message", "message":"Please wait for a moment. Agent will be with you shortly."}));
+		});
+		
+	};
+	
+	module.getSupportService = function(req,res) {
+		
+		var dialog_id = req.cookies.dialogID;
+		var conversation_id = req.cookies.conversationID;
+		var client_id = req.cookies.clientID;
+				
+		
+		//if the dialog have been initialized
+		if(dialog_id){
+			
+			//if the conversation haven't been started
+			if(!conversation_id){
+				var params = { dialog_id: dialog_id};
+
+				dialog.conversation(params, function(err, results) {
+					res.cookie('conversationID', results.conversation_id);
+					res.cookie('clientID', results.client_id);
+					if (err)
+						return JSON.stringify(err, null, 2);
+					else if (!results){
+						return "Result is null";
+					} else {
+						debug ('Results : ' , results);
+						debug ('conversation_id : ' , results.conversation_id);
+						debug ('client_id : ' , results.client_id);
+						res.send(JSON.stringify({"agent" : "Watson", "message":results.response[0]}));
+					}
+				});
+			} else {
+				var message = req.body.message;
+				params = { dialog_id: dialog_id, conversation_id: conversation_id, input: message};
+				
+				dialog.conversation(params, function message(err, results) {
+						var returnMessage = "";
+						
+						if (err)
+							return JSON.stringify(err, null, 2);
+						
+						debug ('Results : ' , results);
+						debug ('conversation_id : ' , conversation_id);
+						debug ('client_id : ' , client_id);
+
+						if (results && results.response[0] && results.response[0].indexOf('Itinerary') > -1 ){
+							debug ('End of conversation');
+							params = { dialog_id: dialog_id, client_id: results.client_id};
+							dialog.getProfile(params, function(err, profile) {
+								if (err)
+									return JSON.stringify(err, null, 2);
+								else
+									searchFlights(profile.name_values[0].value, profile.name_values[1].value, profile.name_values[2].value=='true', new Date(), new Date(), function(values){
+										values.tripFlights.forEach(function(entries, index) {
+										  entry = entries.flightsOptions[0];
+										  debug({"agent" : "Watson", "message": 
+											  results.response[0] +
+											  (index == 0 ? "\nOUTBOUND - " : "\nINBOUND - " ) +
+											  " Airplane : " + entry['airplaneTypeId'] + 
+											  " Flight : " + entry['flightSegmentId'] + 
+											  "\nDeparture : " + (index == 0 ? profile.name_values[0].value : profile.name_values[1].value ) + " " + entry['scheduledDepartureTime'] +
+											  "\nArrival : " + (index == 0 ? profile.name_values[1].value : profile.name_values[0].value ) + " " + entry['scheduledArrivalTime'] +
+											  "\n\nPlease login and reserve flights for reservation in the flights tab.\nIs there anything else that I can help you with?"});
+										  res.send(JSON.stringify({"agent" : "Watson", "message": 
+											  results.response[0] +
+											  (index == 0 ? "\nOUTBOUND - " : "\nINBOUND - " ) +
+											  " Airplane : " + entry['airplaneTypeId'] + 
+											  " Flight : " + entry['flightSegmentId'] + 
+											  "\nDeparture : " + (index == 0 ? profile.name_values[0].value : profile.name_values[1].value ) + " " + entry['scheduledDepartureTime'] +
+											  "\nArrival : " + (index == 0 ? profile.name_values[1].value : profile.name_values[0].value ) + " " + entry['scheduledArrivalTime'] +
+											  "\n\nPlease login and reserve flights for reservation in the flights tab.\nIs there anything else that I can help you with?"}));
+										});
+									});
+							});
+						} else {
+							res.send(JSON.stringify({"agent" : "Watson", "message":results.response[0]}));
+						}
+				});
+			}
+		}	
+		
 	};
 
 	function validateCustomer(username, password, callback /* (error, boolean validCustomer) */) {
