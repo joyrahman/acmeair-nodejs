@@ -17,7 +17,10 @@
 var express = require('express')
   , http = require('http')
   , fs = require('fs')
-  , log4js = require('log4js');
+  , log4js = require('log4js')
+  , request = require('request')
+  , debug = require('debug')('main');
+
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 
 log4js.configure('log4js.json', {});

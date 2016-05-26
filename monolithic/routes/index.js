@@ -24,7 +24,7 @@ module.exports = function (dbtype, settings) {
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
 	
 	log4js.configure('log4js.json', {});
-	var logger = log4js.getLogger('monolithic/routes');
+	var logger = log4js.getLogger('monolithic');
 	logger.setLevel(settings.loggerLevel);
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";

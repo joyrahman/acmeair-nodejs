@@ -20,7 +20,7 @@ module.exports = function (dbtype, settings) {
 	var log4js = require('log4js');
 
 	log4js.configure('log4js.json', {});
-	var logger = log4js.getLogger('bookingservice/routes');
+	var logger = log4js.getLogger('bookingservice');
 	logger.setLevel(settings.loggerLevel);
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
