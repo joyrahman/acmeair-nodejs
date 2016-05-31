@@ -8,9 +8,9 @@ Prereq:
 
 [Setup Compose Mongo DB & create acmeair database](https://www.compose.io/mongodb/)
 
-* Retrieve & save these information from Compose Mongo DB:
-"hostname
-"port" "db" "username" "password”
+* Retrieve & save these information from Compose Mongo DB
+
+	hostname,"port", "db", "username", "password”
 
 Create a string:
 "url": "mongodb://username:password@hostname:port/db"
