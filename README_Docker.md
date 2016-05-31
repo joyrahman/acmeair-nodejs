@@ -12,9 +12,10 @@ Prereq:
 
 	hostname,"port", "db", "username", "password”
 
-Create a string:
-"url": "mongodb://username:password@hostname:port/db"
-e.g. mongodb://acmeuser:password@myServer.dblayer.com:27017/acmeair
+	Create a string:
+	
+	"url": "mongodb://username:password@hostname:port/db"
+	e.g. mongodb://acmeuser:password@myServer.dblayer.com:27017/acmeair
 
 * On cf cli, run following commands to create Compose Mongo DB service on Bluemix:
 Use CF command to create DB:
