@@ -13,9 +13,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-
 var fs = require('fs');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+var util = require('./util/util');
+
+var sleep = require('sleep');
+//Sleep 1 min to wait for all initialization
+sleep.sleep(60);
 var log4js = require('log4js');
 
 log4js.configure('log4js.json', {});
@@ -25,7 +29,7 @@ logger.setLevel(settings.loggerLevel);
 var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.authservice_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
-registerService(process.env.SERVICE_NAME, port);
+util.registerService(process.env.SERVICE_NAME, port);
 
 logger.info("host:port=="+host+":"+port);
 
@@ -66,22 +70,28 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(cookieParser()); 
 
 var router = express.Router(); 	
-var routes = new require('./authservice/routes/index.js')(dbtype,settings); 
-var loader = new require('./loader/loader.js')(routes, settings);
-
-router.post('/login', routes.login);
-router.get('/login/logout', routes.logout);
-router.get('/login/authcheck/:tokenid', routes.authcheck);
-router.get('/login/config/countSessions', routes.countCustomerSessions);
-router.get('/login/loader/load', clearSessionDatabase);
-
-// REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.authContextRoot, router);
-
+var routes;
+var loader;
 var initialized = false;
 var serverStarted = false;
 
-initDB();
+
+util.getServiceProxy(function(proxyUrl){
+	routes = new require('./authservice/routes/index.js')(proxyUrl,dbtype,settings); 
+	loader = new require('./loader/loader.js')(routes, settings);
+
+	router.post('/login', routes.login);
+	router.get('/login/logout', routes.logout);
+	router.get('/login/authcheck/:tokenid', routes.authcheck);
+	router.get('/login/config/countSessions', routes.countCustomerSessions);
+	router.get('/login/loader/load', clearSessionDatabase);
+
+	// REGISTER OUR ROUTES so that all of routes will have prefix 
+	app.use(settings.authContextRoot, router);
+
+
+	initDB();
+});
 
 function initDB(){
     if (initialized ) return;
@@ -116,100 +126,4 @@ function startServer() {
 	serverStarted = true;
 	app.listen(port);
 	console.log('Application started port ' + port);
-}
-
-
-
-function registerService(serviceName, port) {
-	var request = require('request');
-	var NAME = serviceName;
-	var PORT = port;
-	var BEARER_TOKEN = process.env.SD_TOKEN;
-	var SD_URL = process.env.SD_URL;
-	var space_id = process.env.space_id;
-	var SERVICE_IP = ""; //see below
-
-	var headers = {'content-type': 'application/json', 'authorization': 'Bearer ' + BEARER_TOKEN, 'X-Forwarded-Proto': 'https' };
-	var TIME_TO_LIVE = 300;
-	var SLEEP_TIME= Math.ceil(TIME_TO_LIVE*0.9*1000);
-	var url = SD_URL + "/api/v1/instances";
-
-	//Get the service IP
-	var os = require('os');
-	var interfaces = os.networkInterfaces();
-	var addresses = [];
-	for (var k in interfaces) {
-	    for (var k2 in interfaces[k]) {
-	        var address = interfaces[k][k2];
-	        if (address.family === 'IPv4' && !address.internal) {
-	            addresses.push(address.address);
-	        }
-	    }
-	}
-
-	SERVICE_IP=addresses[0];
-
-	var options = {
-		url: url,
-		headers: headers,
-		json: {
-			tags :[],
-			status : "UP",
-			service_name: NAME, 
-			endpoint: {type: "http", "value": SERVICE_IP +":"+ PORT }, 
-			ttl:TIME_TO_LIVE
-		}
-	};
-
-	console.log('OPTIONS : ' + JSON.stringify(options));
-	
-	/*space_id implicitly tell that it is running on IBM Container.
-	 * If space_id exists, register the container to the Service Discovery.
-	 */
-	if (space_id){
-		//Register Container
-		request.post(options, function (err, res, body) {
-			if ( typeof res !== 'undefined' && res ){
-				res.setEncoding('utf8');
-				var heartURL = body.links.heartbeat;
-				console.log('REGISTRATION RESPONSE : ' + JSON.stringify(res));
-				var heartOptions = {
-					url: heartURL,
-					headers: headers
-				};
-				console.log('HEARTBEAT OPTIONS : ' + heartURL);
-				//Renewing registration periodically 
-				setInterval(function() {
-					request.put(heartOptions, function (err, res, body) {
-						if (( typeof res !== 'undefined' && res ) && (res.statusCode === 200)){
-							console.log('HEARTBEAT RESPONSE : ', JSON.stringify(res));
-						}else{
-							if ( typeof res !== 'undefined' && res ){
-								console.log('REGISTRATION RENEWAL FAILED WITH STATUS CODE : ' + res.statusCode + '. TRY REGISTRATION AGAIN.');	
-							} else {
-								console.log('REGISTRATION RENEWAL FAILED. TRY REGISTRATION AGAIN.');
-							}
-							//Re-registering after failed heartbeat
-							request.post(options, function (err, res, body) {
-								if ( typeof res !== 'undefined' && res ){
-									res.setEncoding('utf8');
-									console.log('RE-REGISTRATION RESPONSE : ', JSON.stringify(res));
-									heartURL = body.links.heartbeat;
-									heartOptions = {
-										url: heartURL,
-										headers: headers
-									};
-									console.log('RE-REGISTRATION HEARTBEAT OPTIONS : ' + heartURL);
-								}else{
-									console.log('RE-REGISTRATION FAILED! POST RESPONSE DOES NOT EXIST!');
-								}
-							});
-						}
-					});
-				}, SLEEP_TIME);
-			}else{
-				console.log('REGISTRATION FAILED! POST RESPONSE DOES NOT EXIST!');
-			}
-		});
-	}
 }

@@ -30,7 +30,7 @@ module.exports = function (settings, dbName) {
 	var log4js = require('log4js');
 	
 	//log4js.configure('log4js.json', {});
-	var logger = log4js.getLogger('dataaccess/mongo');
+	var logger = log4js.getLogger('mongo');
 	logger.setLevel(settings.loggerLevel);
 
 	module.dbNames = {

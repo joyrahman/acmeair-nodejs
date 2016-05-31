@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, settings) {
+module.exports = function (proxyUrl, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -41,19 +41,26 @@ module.exports = function (dbtype, settings) {
 	var location = process.env.AUTH_SERVICE || "localhost/acmeair";
 	var host;
 	var post;
-	var contextRoot;
+	var authContextRoot;
     
-	if (location.indexOf(":") > -1) {
+	if (proxyUrl != null){
+		var split1 = proxyUrl.split(":");
+		host=split1[0];
+		port = split1[1];
+		//Expecting authentication service name to be auth
+		authContextRoot = '/auth' + settings.authContextRoot;
+		
+	}else if (location.indexOf(":") > -1) {
 		var split1 = location.split(":");
 		host=split1[0];
 		
 		var split2 = split1.split("/");
 		port = split2[0];
-		authContextRoot = '/' + split2[1];
+		authContextRoot = '/' + split2[1] + '/rest/api';
 	} else {
 		var split1 = location.split("/");
 		host=split1[0];
-		authContextRoot = '/' + split1[1];
+		authContextRoot = '/' + split1[1] + '/rest/api';
 		port=80;
 	}
 	// *****
@@ -181,7 +188,7 @@ module.exports = function (dbtype, settings) {
 	
 	function validateSession(sessionId, callback /* (error, userid) */) {
 		http.globalAgent.keepAlive = true;
-		var path = authContextRoot + "/rest/api/login/authcheck/" + sessionId;
+		var path = authContextRoot + "/login/authcheck/" + sessionId;
      	var options = {
 		hostname: host,
 	 	port: port,

@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, settings) {
+module.exports = function (proxyUrl, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -43,17 +43,23 @@ module.exports = function (dbtype, settings) {
 	var post;
 	var customerContextRoot;
     
-	if (location.indexOf(":") > -1) {
+	if (proxyUrl != null){
+		var split1 = proxyUrl.split(":");
+		host=split1[0];
+		port = split1[1];
+		//Expecting customer service name to be customer
+		customerContextRoot = '/customer' + settings.customerContextRoot;
+	}else if (location.indexOf(":") > -1) {
 		var split1 = location.split(":");
 		host=split1[0];
 		
 		var split2 = split1.split("/");
 		port = split2[0];
-		customerContextRoot = '/' + split2[1];
+		customerContextRoot = '/' + split2[1] + '/rest/api';
 	} else {
 		var split1 = location.split("/");
 		host=split1[0];
-		customerContextRoot = '/' + split1[1];
+		customerContextRoot = '/' + split1[1] + '/rest/api';
 		port=80;
 	}
 	// *****
@@ -158,7 +164,7 @@ module.exports = function (dbtype, settings) {
     	      password: password
     	    });
 
-    	var path = '/rest/api/customer/validateid';
+    	var path = '/customer/validateid';
     	
     	logger.debug("Sending to: " + "http://" + host + ":" + port + customerContextRoot + path);
     	

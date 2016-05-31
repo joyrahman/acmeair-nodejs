@@ -19,7 +19,10 @@ var express = require('express')
   , fs = require('fs')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
-
+var util = require('./util/util');
+var sleep = require('sleep');
+//Sleep 1 min to wait for all initialization
+sleep.sleep(60);
 
 log4js.configure('log4js.json', {});
 var logger = log4js.getLogger('bookingservice_app');
@@ -29,6 +32,7 @@ logger.setLevel(settings.loggerLevel);
 var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.bookingservice_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
+util.registerService(process.env.SERVICE_NAME, port);
 logger.info("host:port=="+host+":"+port);
 
 var dbtype = process.env.dbtype || "mongo";
@@ -73,22 +77,28 @@ app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 	
-var routes = new require('./bookingservice/routes/index.js')(dbtype, settings); 
-var loader = new require('./loader/loader.js')(routes, settings);
 
-router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
-router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
-router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
-router.get('/bookings/config/countBookings', routes.countBookings);
-router.get('/bookings/loader/load', clearBookingDatabase);
 
-// REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.bookingContextRoot, router);
-
+var routes;
+var loader;
 var initialized = false;
 var serverStarted = false;
 
-initDB();
+util.getServiceProxy(function(proxyUrl){
+	routes = new require('./bookingservice/routes/index.js')(proxyUrl, dbtype, settings); 
+	loader = new require('./loader/loader.js')(routes, settings);
+
+	router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
+	router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
+	router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+	router.get('/bookings/config/countBookings', routes.countBookings);
+	router.get('/bookings/loader/load', clearBookingDatabase);
+
+	// REGISTER OUR ROUTES so that all of routes will have prefix 
+	app.use(settings.bookingContextRoot, router);
+
+	initDB();
+});
 
 function initDB(){
     if (initialized ) return;
