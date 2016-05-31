@@ -20,8 +20,11 @@ Prereq:
 * On cf cli, run following commands to create Compose Mongo DB service on Bluemix:
 
 	Use CF command to create DB:
+	
 	cf cups mongoCompose -p "url"
+	
 	At the URL prompt, enter above URL that was created:
+	
 	url>mongodb://acmeuser:password@myServer.dblayer.com:27017/acmeair
 
 * Mongo DB CF Bridge App:
