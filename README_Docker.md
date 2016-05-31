@@ -106,30 +106,46 @@ NOTE: These service name MUST be used (hardcoded in the app to recognize each un
 	Booking Service : booking
 
 * Useful command for debugging : The following command can be used to logon container shell:
-cf ic exec -it <container name> bash
-e.g. cf ic exec -it auth_2 bash
+
+	cf ic exec -it <container name> bash
+
+	e.g. cf ic exec -it auth_2 bash
 
 Wait for couple minutes AFTER all services are running (There is 1 minute sleep time in the app to wait for all initialization including networking)
-Access each REST API using Service Proxy URL (ServiceProxyTenant IP address and port number)
-e.g. Using FireFox Poster to POST
-URL : http://134.168.16.136:6379/auth/acmeair-as/rest/api/login
-Content Type : application/json
-Body : 
-{
+
+	Access each REST API using Service Proxy URL (ServiceProxyTenant IP address and port number)
+
+	e.g. Using FireFox Poster to POST
+
+	URL : http://134.168.16.136:6379/auth/acmeair-as/rest/api/login
+
+	Content Type : application/json
+
+	Body : 
+
+	{
 	"login": "uid11@email.com",
 	"password": "password"
-}
+	}
 
 Sample URL:
+
 Authentication Service GET : http://134.168.16.136:6379/auth/acmeair-as/rest/api/login/logout
+
 Customer Service GET : http://134.168.16.136:6379/customer/acmeair-cs/rest/api/customer/config/countCustomers
+
 Flight Service GET : http://134.168.16.136:6379/flight/acmeair-fs/rest/api/flights/config/countFlights
+
 Booking Service GET : http://134.168.16.136:6379/booking/acmeair-bs/rest/api/bookings/config/countBookings
 
 #### Check if Services are registered
+
 * Go to Service Discovery to see all services are discovered
+
 * Go to Service Proxy to see all services are registered
 
 Debugging:
-Go to each container services log to see if there is heartbeat recorded and StatusCode is 200:
-e.g. {"log":"HEARTBEAT RESPONSE : {\"statusCode\":200,\.....}
+
+	Go to each container services log to see if there is heartbeat recorded and StatusCode is 200:
+
+	e.g. {"log":"HEARTBEAT RESPONSE : {\"statusCode\":200,\.....}
