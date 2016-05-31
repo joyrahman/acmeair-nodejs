@@ -1,9 +1,13 @@
 ## Acmeair NodeJS on Docker 
 
 Prereq:
+
 [Install Docker and stared Docker daemon](https://docs.docker.com/installation/)
+
 [Install Cloud Foundry & ](http://docs.cloudfoundry.org/cf-cli/)
+
 [Setup Compose Mongo DB & create acmeair database](https://www.compose.io/mongodb/)
+
 * Retrieve & save these information from Compose Mongo DB:
 "hostname
 "port" "db" "username" "password”
