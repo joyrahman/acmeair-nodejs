@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, settings) {
+module.exports = function (proxyUrl, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');

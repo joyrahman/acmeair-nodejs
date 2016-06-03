@@ -137,7 +137,7 @@
     	var airportCodeMapping, booking, customer, customerSession, flight, flightSegment;
 
     	dojo.xhrGet({
-			url: basePath.concat("customer/config/countCustomers"),
+			url: 'http://' + window.location.host + '/customer/acmeair-cs/rest/api/customer/config/countCustomers',
 			handleAs: "json",
 			load: function(response, ioArgs) {	
 		    	//alert("Response: " + response);
@@ -149,7 +149,7 @@
     	});
     		
     	dojo.xhrGet({
-			url: basePath.concat("login/config/countSessions"),
+			url: 'http://' + window.location.host + '/auth/acmeair-as/rest/api/login/config/countSessions',
 			handleAs: "json",
 			load: function(response, ioArgs) {			    	
 		    	document.getElementById('sessionData').innerHTML=response;
@@ -160,7 +160,7 @@
     	});
     	
        	dojo.xhrGet({
-			url: basePath.concat("flights/config/countFlights"),
+			url: 'http://' + window.location.host + '/flight/acmeair-fs/rest/api/flights/config/countFlights',
 			handleAs: "json",
 			load: function(response, ioArgs) {			    	
 		    	document.getElementById('flightData').innerHTML=response;
@@ -171,7 +171,7 @@
     	});
 	 
        	dojo.xhrGet({
-			url: basePath.concat("flights/config/countFlightSegments"),
+			url: 'http://' + window.location.host + '/flight/acmeair-fs/rest/api/flights/config/countFlightSegments',
 			handleAs: "json",
 			load: function(response, ioArgs) {			    
 		    	document.getElementById('flightSegmentData').innerHTML=response;
@@ -183,7 +183,7 @@
        	
        	
     	dojo.xhrGet({
-			url: basePath.concat("bookings/config/countBookings"),
+			url: 'http://' + window.location.host + '/booking/acmeair-bs/rest/api/bookings/config/countBookings',
 			handleAs: "json",
 			load: function(response, ioArgs) {	
 		    	document.getElementById('bookingData').innerHTML=response;
@@ -194,7 +194,8 @@
     	});	
     	
     	dojo.xhrGet({
-			url: basePath.concat("flights/config/countAirports"),
+    		
+			url: 'http://' + window.location.host + '/flight/acmeair-fs/rest/api/flights/config/countAirports',
 			handleAs: "json",
 			load: function(response, ioArgs) {	
 		    	document.getElementById('airportData').innerHTML=response;

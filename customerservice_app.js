@@ -85,7 +85,7 @@ app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router();
 
-registerService(process.env.SERVICE_NAME, port);
+//registerService(process.env.SERVICE_NAME, port);
 
 var routes;
 var loader;

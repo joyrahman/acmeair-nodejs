@@ -22,6 +22,10 @@ var express = require('express')
   , debug = require('debug')('main');
 
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+var util = require('./util/util');
+var sleep = require('sleep');
+//Sleep 1 min to wait for all initialization
+sleep.sleep(60);
 
 log4js.configure('log4js.json', {});
 var logger = log4js.getLogger('main_app');
@@ -30,6 +34,12 @@ logger.setLevel(settings.loggerLevel);
 // disable process.env.PORT for now as it cause problem on mesos slave
 var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.main_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
+
+console.log('Register Service');
+
+util.registerService(process.env.SERVICE_NAME, port);
+
+console.log('Done');
 
 logger.info("host:port=="+host+":"+port);
 
@@ -47,7 +57,7 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
-var routes = new require('./main/routes/index.js')(dbtype, settings);
+var routes;
 //var loader = new require('./loader/loader.js')(routes, settings);
 
 // Setup express with 4.0.0
@@ -79,24 +89,29 @@ app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 		
-
-// config/load
-router.get('/config/runtime', routes.getRuntimeInfo);
-router.get('/config/dataServices', routes.getDataServiceInfo);
-router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
-
-
-
-// ?
-router.get('/checkstatus', checkStatus);
-
-//REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.mainContextRoot, router);
-
-// Only initialize DB after initialization of the authService is done
+//Only initialize DB after initialization of the authService is done
 var serverStarted = false;
 
-startServer();
+// config/load
+util.getServiceProxy(function(proxyUrl){
+	routes = new require('./main/routes/index.js')(proxyUrl,dbtype, settings);
+	router.get('/config/runtime', routes.getRuntimeInfo);
+	router.get('/config/dataServices', routes.getDataServiceInfo);
+	router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
+	
+	// ?
+	router.get('/checkstatus', checkStatus);
+
+	//REGISTER OUR ROUTES so that all of routes will have prefix 
+	app.use(settings.mainContextRoot, router);
+	
+	startServer();
+	
+});
+
+
+
+
 
 function checkStatus(req, res){
 	res.sendStatus(200);
