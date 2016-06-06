@@ -77,7 +77,9 @@ var serverStarted = false;
 
 
 util.getServiceProxy(function(proxyUrl){
-	routes = new require('./authservice/routes/index.js')(proxyUrl,dbtype,settings); 
+		
+	proxy =  (proxyUrl || process.env.PROXY);
+	routes = new require('./authservice/routes/index.js')(proxy,dbtype,settings); 
 	loader = new require('./loader/loader.js')(routes, settings);
 
 	router.post('/login', routes.login);

@@ -74,7 +74,6 @@ module.exports = function (settings, dbName) {
 		}
 		// Default to read from settings file
 		if (mongo==null) {
-			logger.info("help!");
 		    mongo = {
 		    "hostname": process.env.MONGO_HOST || settings.mongoHost,
 		    "port": settings.mongoPort,

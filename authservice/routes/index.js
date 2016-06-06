@@ -82,7 +82,6 @@ module.exports = function (proxyUrl, dbtype, settings) {
 		res.cookie('sessionid', '');
 		// invalidate current session here??
 				
-		// replace eventually with call to business logic to validate customer
 		validateCustomer(login, password, function(err, customerValid) {
 			if (err) {
 				res.status(500).send(err); // TODO: do I really need this or is there a cleaner way??
@@ -166,7 +165,7 @@ module.exports = function (proxyUrl, dbtype, settings) {
 
     	var path = '/customer/validateid';
     	
-    	logger.debug("Sending to: " + "http://" + host + ":" + port + customerContextRoot + path);
+    	console.log("Sending to: " + "http://" + host + ":" + port + customerContextRoot + path);
     	
     	var options = {
     	    host: host,
