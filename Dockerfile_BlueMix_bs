@@ -4,7 +4,7 @@ RUN mkdir /src
 
 WORKDIR /src
 COPY ./acmeair-nodejs /src
-#RUN npm install
+RUN npm install
 
 EXPOSE 80
 ENV VCAP_APP_PORT=80
