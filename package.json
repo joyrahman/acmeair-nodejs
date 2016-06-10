@@ -23,7 +23,6 @@
     "cassandra-driver":"^2.0.x",
     "stats-lite":"^1.0.3",
     "circuit-breaker":"^0.0.4",
-    "request": "^2.72.0",
-    "sleep": "^3.0.1"
+    "request": "^2.72.0"
   }
 }

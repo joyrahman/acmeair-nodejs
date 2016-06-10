@@ -31,7 +31,9 @@ module.exports = function (loadUtil,settings) {
 
 	var DATABASE_PARALLELISM = 5;
 	
-	var nowAtMidnight = getDateAtTwelveAM(new Date());
+	var d = new Date(); // Today!
+	d.setDate(d.getDate() - 1); // Yesterday!
+	var nowAtMidnight = getDateAtTwelveAM(d);
 
 	var customerTemplate = {
 	    _id : undefined,

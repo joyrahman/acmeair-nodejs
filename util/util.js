@@ -46,6 +46,7 @@ module.exports = {
 		 * If space_id exists, register the container to the Service Discovery.
 		 */
 		if (space_id){
+			setInterval(function() {
 			//Register Container
 			request.post(options, function (err, res, body) {
 				if ( typeof res !== 'undefined' && res ){
@@ -90,6 +91,7 @@ module.exports = {
 					console.log('REGISTRATION FAILED! POST RESPONSE DOES NOT EXIST!');
 				}
 			});
+			}, 10000);
 		}
 	},
 

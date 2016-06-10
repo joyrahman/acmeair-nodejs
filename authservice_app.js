@@ -17,9 +17,6 @@ var fs = require('fs');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 var util = require('./util/util');
 
-var sleep = require('sleep');
-//Sleep 1 min to wait for all initialization
-sleep.sleep(60);
 var log4js = require('log4js');
 
 log4js.configure('log4js.json', {});
