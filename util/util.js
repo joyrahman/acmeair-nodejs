@@ -115,6 +115,8 @@ module.exports = {
 		 * If space_id exists, find Service Proxy.
 		 */
 		if (space_id){
+		  setInterval(function() {
+			//Register Container
 			//Get ServiceProxy information
 			request.get(options, function (err, res, body) {
 				if ( typeof res !== 'undefined' && res ){
@@ -126,6 +128,7 @@ module.exports = {
 					});
 				}
 			});
+		  }, 10000);
 		}else{
 			callback(null);
 		};
