@@ -46,7 +46,7 @@ module.exports = {
 		 * If space_id exists, register the container to the Service Discovery.
 		 */
 		if (space_id){
-		  setInterval(function() {
+		  var registrationId = setInterval(function() {
 			//Register Container
 			request.post(options, function (err, res, body) {
 				if ( typeof res !== 'undefined' && res ){
@@ -58,6 +58,7 @@ module.exports = {
 						headers: headers
 					};
 					console.log('HEARTBEAT OPTIONS : ' + heartURL);
+					clearInterval(registrationId);
 					//Renewing registration periodically 
 					setInterval(function() {
 						request.put(heartOptions, function (err, res, body) {
@@ -115,7 +116,7 @@ module.exports = {
 		 * If space_id exists, find Service Proxy.
 		 */
 		if (space_id){
-		  setInterval(function() {
+		  var id = setInterval(function() {
 			//Register Container
 			//Get ServiceProxy information
 			request.get(options, function (err, res, body) {
@@ -123,6 +124,7 @@ module.exports = {
 					JSON.parse(body).instances.forEach(function(instance){
 						if(instance.service_name === "ServiceProxy"){
 							console.log('SERVICE PROXY IP AND PORT : ' + instance.endpoint.value);
+							clearInterval(id);
 							callback(instance.endpoint.value);
 						}
 					});
