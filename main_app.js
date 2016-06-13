@@ -23,9 +23,7 @@ var express = require('express')
 
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 var util = require('./util/util');
-var sleep = require('sleep');
-//Sleep 1 min to wait for all initialization
-sleep.sleep(60);
+
 
 log4js.configure('log4js.json', {});
 var logger = log4js.getLogger('main_app');
@@ -35,11 +33,7 @@ logger.setLevel(settings.loggerLevel);
 var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.main_port);
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
-console.log('Register Service');
-
 util.registerService(process.env.SERVICE_NAME, port);
-
-console.log('Done');
 
 logger.info("host:port=="+host+":"+port);
 
