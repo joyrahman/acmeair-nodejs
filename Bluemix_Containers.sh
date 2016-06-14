@@ -1,9 +1,9 @@
 cd ..
 REGISTRY=registry.ng.bluemix.net
-NAME_SPACE=wasperf
-MONGO_BRIDGE=MongoBridge1
+NAME_SPACE=
+MONGO_BRIDGE=
 SD_URL=https://servicediscovery.ng.bluemix.net
-SD_TOKEN=1n5ivgpbo0nkhiorm3jprrjjvb912du1u125ggolqjm2h90is8rg
+SD_TOKEN=
 
 docker build -f acmeair-nodejs/Dockerfile_BlueMix_main -t acmeair_node_mainservice .
 docker build -f acmeair-nodejs/Dockerfile_BlueMix_as -t acmeair_node_authservice .
