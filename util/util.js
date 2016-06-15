@@ -40,13 +40,13 @@ module.exports = {
 			}
 		};
 
-		console.log('OPTIONS : ' + JSON.stringify(options));
 		
 		/*space_id implicitly tell that it is running on IBM Container.
 		 * If space_id exists, register the container to the Service Discovery.
 		 */
 		if (space_id){
-		  var registrationId = setInterval(function() {
+			console.log('OPTIONS : ' + JSON.stringify(options));
+			var registrationId = setInterval(function() {
 			//Register Container
 			request.post(options, function (err, res, body) {
 				if ( typeof res !== 'undefined' && res ){
@@ -110,12 +110,12 @@ module.exports = {
 			headers: headers
 		};
 
-		console.log('OPTIONS : ' + JSON.stringify(options));
 		
 		/*space_id implicitly tell that it is running on IBM Container.
 		 * If space_id exists, find Service Proxy.
 		 */
 		if (space_id){
+		  console.log('OPTIONS : ' + JSON.stringify(options));
 		  var id = setInterval(function() {
 			//Register Container
 			//Get ServiceProxy information

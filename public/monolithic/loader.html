@@ -1,5 +1,5 @@
 <!-- ***************************************************************************
-* Copyright (c) 2013-2015 IBM Corp.
+* Copyright (c) 2015 IBM Corp.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************************** -->
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-
 <head>
   <title>Acme Air</title>
+  <meta charset="UTF-8">
   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
   <link rel="stylesheet" type="text/css" href="css/style.css">
   <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/claro/claro.css">
@@ -28,7 +28,8 @@
 
   <script>
     dojo.require("dojo.parser");
-    
+	dojo.require("dojox.grid.DataGrid");
+	dojo.require("dojo.data.ItemFileWriteStore");    
     dojo.require("dijit.form.Button");
     dojo.require("dijit.Dialog");
     dojo.require("dijit.form.TextBox");
@@ -40,64 +41,73 @@
     dojo.addOnLoad(pageLoaded);
     
     function pageLoaded() {
-    	updateLoggedInUserWelcome();
+    	updateLoggedInUserWelcome();   	
+    	loadLoaderConfigData();
     }
-	
-	var WSPort = 8080;
-	dojo.xhrGet({
-		url: "rest/api/support",
-		handleAs: "text",
-		sync: true,
-		load: function(response, ioArgs) {
-			WSPort = response;
-		},
-		error: function(response, ioArgs) {
-			alert(response);
-		}
-	});	
-  </script>
-  <script type="text/javascript">
-      function getDateString() {
-    	var now = new Date();
-  	  	return now.getHours() + ":" + ("0" + now.getMinutes()).slice(-2) + 
-  	  		":" + ("0" + now.getSeconds()).slice(-2);
-      }
-      
-      function newlinesToBreak(string) {
-    	  return string.replace(/(?:\r\n|\r|\n)/g,'<br/>');
-      }
-
-	  var chatSocket = new WebSocket("ws://"+location.hostname+":"+WSPort); 
-	  chatSocket.onmessage = function(event) {
-		var jsonObj = JSON.parse(event.data);
-		var displayMessage = "<b>" + jsonObj.agent + "</b>: " + getDateString() + " - " + 
-			newlinesToBreak(jsonObj.message);
-		
-		displaybox.innerHTML += "<div class=\"their-text\">"+displayMessage+"\n"+"</div>";
-		displaybox.scrollTop = displaybox.scrollHeight;
-	  }
-	  
-	  function sendChatMessage() {
-	  	var chatbox = document.getElementById("chatbox");
-	  	var displaybox = document.getElementById("displaybox");
-	  	var message = chatbox.value;
-	  	var displayMessage = newlinesToBreak(message);
-	  	var user = dojo.cookie("loggedinuser");
-	  	
-	  	if(user === undefined || user === null) user = "Me";
-	  	displayMessage = "<b>" + user + "</b>: " + getDateString()
-	  		+ " - " + displayMessage;
-	  	displaybox.innerHTML += "<div class=\"my-text\">"+displayMessage+"\n"+"</div>";
-	  	displaybox.scrollTop = displaybox.scrollHeight;
-	  	chatbox.value = "";
-	  	
-	    chatSocket.send(message);
-	  }
+    
+    var basePath =  "rest/api/";
+        
+    
+    
+    function getActiveDataServiceInfo() {
+    	var grid, store, dataStore;
+    	
+    	dojo.xhrGet({
+			url: basePath.concat("config/activeDataService"),
+			handleAs: "text",
+			load: function(response, ioArgs) {	
+		    	document.getElementById('activeServiceLoc').innerHTML="The loader to the '".concat(response).concat("' data service.");;		    	
+			},
+			error: function(response, ioArgs) {
+				alert(response);
+			}
+    	});
+    }    
+    
+    
+    
+    function loadLoaderConfigData() {
+    	dojo.xhrGet({
+			url: basePath.concat('loader/query'),
+			handleAs: "text",
+			load: function(response, ioArgs) {
+				updateFormData(response);
+			},
+			error: function(response, ioArgs) {
+				alert(response);
+			}
+		});
+    }
+    
+    function updateFormData(loaderdata) {
+		dijit.byId('customerSizeInput').set('value', loaderdata);
+    }
+    
+    function loadDB() {
+    	showWaitDialog();
+    	dojo.xhrGet({
+    		content : {
+    			numCustomers: dijit.byId('customerSizeInput').value
+    		},
+    		url: basePath.concat('loader/load'),
+    		load: function(response, ioArgs) {
+    			hideWaitDialog();
+    			alert('Database Loaded, response: ' + response);
+    		},
+    		error: function(response, ioArgs) {
+    			hideWaitDialog();
+    			alert('error loaddb, response: ' + response);
+    		}
+    	});
+    	
+    }
+    
+	function formatFlightNumnber(data) {
+		return data.name[0];
+	}
   </script>
 </head>
-
 <body class="claro">
-
 <span id="variousDialogs" style="display:none">
 <div dojoType="dijit.Dialog" id="loginWaitDialog" title="Please Wait">
 		<table width="258">
@@ -131,6 +141,14 @@
 			</tr>
 		</table>
 </div>
+
+
+<div dojoType="dijit.Dialog" id="waitDialog" title="Please Wait">
+		<table width="258">
+			<tr><td>Please Wait...</td></tr>
+		</table>
+		
+</div>
 </span>
     
 <div id="main">
@@ -148,38 +166,31 @@
 
 		<div id="toolbar5" data-dojo-type="dijit.Toolbar">
 			<div data-dojo-type="ToolbarSectionStart" data-dojo-props='label:"Actions"'></div>
-			<div id="toolbar5.home" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='index.html'">Home</div>
-			<div id="toolbar5.flights" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='flights.html'">Flights</div>
-			<div id="toolbar5.checkin" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='checkin.html'">Checkin</div>
-			<div id="toolbar5.login" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="showLoginDialog()">Login</div>
-			<div id="toolbar5.logout" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="logout()">Logout</div>
-			<div id="toolbar5.account" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='customerprofile.html'">Account</div>
-			<div id="toolbar5.support" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='support.html'">Support</div>
+			<div id="toolbar5.home" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='index.html'">Acme Air Home</div>
+			<div id="toolbar5.loaddb" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='loader.html'">Load the database</div>
+			<div id="toolbar5.info" data-dojo-type="dijit.form.Button" data-dojo-props='showLabel:true' onClick="window.location='config.html'">Runtime Info</div>
 		</div>
 		
 		<div class="content">
-			<div>
-	            <div id="displaybox" class="chatDisplay"></div>
-	            <div id="chatEntryArea">
-	            	<textarea class="chatDisplay chatEntry" id="chatbox" placeholder="Enter Text Here..."></textarea>
-	            	<button class="chatButton" id="chatButton" type="button" onclick="sendChatMessage()">Send</button>
-	            </div>
-	            <script>
-	            	document.getElementById("chatbox").addEventListener("keydown", function(e) {
-	      			  	if(e.keyCode == 13 && !e.shiftKey) { 
-	      			  		document.getElementById("chatButton").click();
-	      			  		e.preventDefault();
-	      			  	}
-	      	  		}, false);
-	            </script>
-	        </div>
+			<h1>Acme Air Database Loader</h1>
+			<script type="text/javascript">
+				getActiveDataServiceInfo();
+			</script> 
+			<div id="activeServiceLoc"></div> 
+			<br/>
+									
+			<h2>Loader Configuration </h2>
+			<br/>
+      		Number of Customers to Load: <input type="text" dojoType="dijit.form.TextBox" id="customerSizeInput" data-dojo-props="trim:true" required="true"></input><br/>
+      		<button dojoType="dijit.form.Button" id="loadDatabaseButton" onClick="loadDB()">Load the Database</button>
+      		</br/>						
 		</div>
 	</div>
 	<footer>
 		<p>Acme Air</p>
 	</footer>
 	<div class="base-footer">
-		<a href="config.html" style="left-margin: 15px">Configure the Acme Air environment.</a>
+		<a href="index.html">Acme Air Home. </a>
 	</div>
 </div>
 

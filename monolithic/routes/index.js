@@ -16,6 +16,7 @@
 
 module.exports = function (dbtype, settings) {
     var module = {};
+    var debug = require('debug')('routes');
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
 	var http = require('http')
@@ -23,16 +24,41 @@ module.exports = function (dbtype, settings) {
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
 	
+	
+	//initialize for Watson services
+	var watson = require('watson-developer-cloud');
+	var vcapUrl = null;
+	var vcapUsername = null;
+	var vcapPassword = null;
+	
+	if (process.env.VCAP_SERVICES) {
+        var services = JSON.parse(process.env.VCAP_SERVICES);
+        for (var service_name in services) {
+            if (service_name.indexOf('dialog') === 0) {
+                var service = services[service_name][0];
+                vcapUrl = service.credentials.url;
+                vcapUsername = service.credentials.username;
+                vcapPassword = service.credentials.password;
+            }
+        }
+    }
+	
+	var dialog = watson.dialog({
+		url: vcapUrl || settings.watsontUrl,
+		username : vcapUsername || settings.watsonUsername,
+		password : vcapPassword || settings.watsonPassword,
+		version : settings.watsonVersion
+	});
+	
+	//logging configurations
 	log4js.configure('log4js.json', {});
-	var logger = log4js.getLogger('monolithic');
+	var logger = log4js.getLogger('routes');
 	logger.setLevel(settings.loggerLevel);
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
-	
-	var databaseName = process.env.DATABASE_NAME || "acmeair";
-	
-	var dataaccess = new require(daModuleName)(settings, databaseName);
+	debug("Use dataaccess:", daModuleName);
+	var dataaccess = new require(daModuleName)(settings, "acmeair");
 	
 	module.dbNames = dataaccess.dbNames
 	
@@ -40,12 +66,12 @@ module.exports = function (dbtype, settings) {
 		dataaccess.initializeDatabaseConnections(callback)
 	}
 
-	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
-		dataaccess.insertOne(collectionname, doc, callback)
+    module.initialize = function (callback) {
+    	dataaccess.initialize(callback);
 	};
 	
-	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
-		dataaccess.removeAll(collectionname, callback)
+	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
+		dataaccess.insertOne(collectionname, doc, callback)
 	};
 
 	module.checkForValidSessionCookie = function(req, res, next) {
@@ -82,12 +108,10 @@ module.exports = function (dbtype, settings) {
 	}
 
 	module.login = function(req, res) {
-		
+		logger.debug('logging in user');
 		var login = req.body.login;
 		var password = req.body.password;
 	
-		logger.debug('logging in user' + login);
-
 		res.cookie('sessionid', '');
 		
 		// replace eventually with call to business logic to validate customer
@@ -126,19 +150,29 @@ module.exports = function (dbtype, settings) {
 	};
 
 	module.queryflights = function(req, res) {
-		logger.debug('querying flights');
-		
 		var fromAirport = req.body.fromAirport;
 		var toAirport = req.body.toAirport;
-		var fromDateWeb = new Date(req.body.fromDate);
-		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
 		var oneWay = (req.body.oneWay == 'true');
+		var fromDateWeb = new Date(req.body.fromDate);
 		var returnDateWeb = new Date(req.body.returnDate);
+		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, function(values){
+			res.send(values)
+			
+		});
+	}
+	
+	module.searchFlights = function (fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
+		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback);
+	}
+	function searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
+		logger.debug('querying flights');
+		
+		//If your acmeair is in another time zone (e.g. Your browser is in EST & Acmeair server is in CST), fromDate will be 1 day behind than fromDateWeb & won't query 
+		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
 		var returnDate;
 		if (!oneWay) {
 			returnDate = new Date(returnDateWeb.getFullYear(), returnDateWeb.getMonth(), returnDateWeb.getDate()); // convert date to local timezone
 		}
-		
 		getFlightByAirportsAndDepartureDate(fromAirport, toAirport, fromDate, function (error, flightSegmentOutbound, flightsOutbound) {
 			logger.debug('flightsOutbound = ' + flightsOutbound);
 			if (flightsOutbound) {
@@ -165,7 +199,9 @@ module.exports = function (dbtype, settings) {
 						 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10},
 						 {"numPages":1,"flightsOptions": flightsReturn,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
 						], "tripLegs":2};
-					res.send(options);
+					
+					debug('options', options);
+					callback(options);
 				});
 			}
 			else {
@@ -173,7 +209,7 @@ module.exports = function (dbtype, settings) {
 					[
 					 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
 					], "tripLegs":1};
-				res.send(options);
+				callback(options);
 			}
 		});
 	};
@@ -341,6 +377,11 @@ module.exports = function (dbtype, settings) {
 		});
 	};
 	
+	module.getSupportWSPort = function(req,res) {
+		var port = settings.websocketPort.toString();
+		res.send(port);
+	};
+
 	function countItems(dbName, callback /*(error, count)*/) {
 		console.log("Calling count on " + dbName);
 		dataaccess.count(dbName, {}, function(error, count) {
@@ -351,21 +392,159 @@ module.exports = function (dbtype, settings) {
 			}
 		});
 	};
+	
+	module.getSupportInitInfo = function(req,res) {
+		
+		var dialog_id = null;
+		res.clearCookie('dialogID');
+		res.clearCookie('conversationID');
+		res.clearCookie('clientID');
+		
+		
+		dialog.getDialogs({}, function (err, dialogs) {
+		
+			if (err)
+				debug ('error:', err);
+			else {
+				debug ('Dialogs : ', dialogs );
+				
+				var doesDialogExist = false;
+				dialogs.dialogs.filter(function(item) {
+					if(item.name == settings.watsonDialogName){
+						debug ('Item : ', item );
+						debug ('dialog_id : ', item.dialog_id );
+						dialog_id = item.dialog_id;
+						res.cookie('dialogID', dialog_id);
+						doesDialogExist = true;
+						//To update the dialog, set watsonUpdateDialog true, and update watsonDialogFile.
+						if (settings.watsonUpdateDialog){
+							var fs = require('fs');
+							var params = {
+									dialog_id: dialog_id,
+									file: fs.createReadStream('./websocket/' + settings.watsonDialogFile)
+							};
+							dialog.updateDialog(params, function(err, update){
+								debug ('Update Message : ',update);
+								debug ('Error : ',err);
+							});
+						}else {
+							debug ("NO DIALOG UPDATE");
+						}
+					}
+				});
+				/*If the Dialog does not exist, create the dialog.
+				 * Set the Dialog name & file name in settings.json
+				 */
+				if (!doesDialogExist){
+					var fs = require('fs');
+					var params = {
+						  name: settings.watsonDialogName,
+						  file: fs.createReadStream('./websocket/' + settings.watsonDialogFile)
+					};
+					dialog.createDialog(params, function(err, newDialog){
+						debug ('dialog name : ',settings.watsonDialogName);
+						debug ('Error : ',err);
+						debug ('dialog_id : ', newDialog.dialog_id );
+						dialog_id = newDialog.dialog_id;
+						res.cookie('dialogID', dialog_id);
+					});
+				}
+			}
+			res.send(JSON.stringify({"agent" : "Server Message", "message":"Please wait for a moment. Agent will be with you shortly."}));
+		});
+		
+	};
+	
+	module.getSupportService = function(req,res) {
+		
+		var dialog_id = req.cookies.dialogID;
+		var conversation_id = req.cookies.conversationID;
+		var client_id = req.cookies.clientID;
+				
+		
+		//if the dialog have been initialized
+		if(dialog_id){
+			
+			//if the conversation haven't been started
+			if(!conversation_id){
+				var params = { dialog_id: dialog_id};
+
+				dialog.conversation(params, function(err, results) {
+					res.cookie('conversationID', results.conversation_id);
+					res.cookie('clientID', results.client_id);
+					if (err)
+						return JSON.stringify(err, null, 2);
+					else if (!results){
+						return "Result is null";
+					} else {
+						debug ('Results : ' , results);
+						debug ('conversation_id : ' , results.conversation_id);
+						debug ('client_id : ' , results.client_id);
+						res.send(JSON.stringify({"agent" : "Watson", "message":results.response[0]}));
+					}
+				});
+			} else {
+				var message = req.body.message;
+				params = { dialog_id: dialog_id, conversation_id: conversation_id, input: message};
+				
+				dialog.conversation(params, function message(err, results) {
+						var returnMessage = "";
+						
+						if (err)
+							return JSON.stringify(err, null, 2);
+						
+						debug ('Results : ' , results);
+						debug ('conversation_id : ' , conversation_id);
+						debug ('client_id : ' , client_id);
+
+						if (results && results.response[0] && results.response[0].indexOf('Itinerary') > -1 ){
+							debug ('End of conversation');
+							params = { dialog_id: dialog_id, client_id: results.client_id};
+							dialog.getProfile(params, function(err, profile) {
+								if (err)
+									return JSON.stringify(err, null, 2);
+								else
+									searchFlights(profile.name_values[0].value, profile.name_values[1].value, profile.name_values[2].value=='true', new Date(), new Date(), function(values){
+										values.tripFlights.forEach(function(entries, index) {
+										  entry = entries.flightsOptions[0];
+										  debug({"agent" : "Watson", "message": 
+											  results.response[0] +
+											  (index == 0 ? "\nOUTBOUND - " : "\nINBOUND - " ) +
+											  " Airplane : " + entry['airplaneTypeId'] + 
+											  " Flight : " + entry['flightSegmentId'] + 
+											  "\nDeparture : " + (index == 0 ? profile.name_values[0].value : profile.name_values[1].value ) + " " + entry['scheduledDepartureTime'] +
+											  "\nArrival : " + (index == 0 ? profile.name_values[1].value : profile.name_values[0].value ) + " " + entry['scheduledArrivalTime'] +
+											  "\n\nPlease login and reserve flights for reservation in the flights tab.\nIs there anything else that I can help you with?"});
+										  res.send(JSON.stringify({"agent" : "Watson", "message": 
+											  results.response[0] +
+											  (index == 0 ? "\nOUTBOUND - " : "\nINBOUND - " ) +
+											  " Airplane : " + entry['airplaneTypeId'] + 
+											  " Flight : " + entry['flightSegmentId'] + 
+											  "\nDeparture : " + (index == 0 ? profile.name_values[0].value : profile.name_values[1].value ) + " " + entry['scheduledDepartureTime'] +
+											  "\nArrival : " + (index == 0 ? profile.name_values[1].value : profile.name_values[0].value ) + " " + entry['scheduledArrivalTime'] +
+											  "\n\nPlease login and reserve flights for reservation in the flights tab.\nIs there anything else that I can help you with?"}));
+										});
+									});
+							});
+						} else {
+							res.send(JSON.stringify({"agent" : "Watson", "message":results.response[0]}));
+						}
+				});
+			}
+		}	
+		
+	};
 
 	function validateCustomer(username, password, callback /* (error, boolean validCustomer) */) {
 		dataaccess.findOne(module.dbNames.customerName, username, function(error, customer){
-			
-				if (error) {
-					callback (error, null);
-				}
+				if (error) callback (error, null);
 				else{
 	                if (customer)
 	                {
 	                	callback(null, customer.password == password);
 	                }
-	                else {
-	                	callback(null, false);
-	                }
+	                else
+	                	callback(null, false)
 				}
 		});
 	};
@@ -401,7 +580,6 @@ module.exports = function (dbtype, settings) {
 	}
 
 	function getCustomer(username, callback /* (error, Customer) */) {
-								
 	    dataaccess.findOne(module.dbNames.customerName, username, callback);
 	}
 
@@ -417,16 +595,16 @@ module.exports = function (dbtype, settings) {
 	    dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) 
 	}
 
-
 	function getFlightByAirportsAndDepartureDate(fromAirport, toAirport, flightDate, callback /* error, flightSegment, flights[] */) {
 		logger.debug("getFlightByAirportsAndDepartureDate " + fromAirport + " " + toAirport + " " + flightDate);
 						
 		getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, function(error, flightsegment) {
-						
 			if (error) {
+				logger.error("Hit error:"+error);
 				throw error;
 			}
 			
+			logger.debug("flightsegment = " + JSON.stringify(flightsegment));
 			if (!flightsegment) {
 				callback(null, null, null);
 				return;
@@ -469,7 +647,7 @@ module.exports = function (dbtype, settings) {
 
 	function getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, callback /* error, flightsegment */) {
 		var segment;
-	
+		
 		if (settings.useFlightDataRelatedCaching) {
 			segment = flightSegmentCache.get(fromAirport+toAirport);
 			if (segment) {
@@ -479,11 +657,12 @@ module.exports = function (dbtype, settings) {
 			}
 			("cache miss - flightsegment search, key = " + fromAirport+toAirport + ", flightSegmentCache size = " + flightSegmentCache.size());
 		}
-
+		debug('module.dbNames.flightSegmentName', module.dbNames.flightSegmentName);
+		debug('fromAirport', fromAirport);
+		debug('toAirport', toAirport);
+		
 		dataaccess.findBy(module.dbNames.flightSegmentName,{originPort: fromAirport, destPort: toAirport},function(err, docs) {
-			if (err) {
-				callback (err, null);
-			}
+			if (err) callback (err, null);
 			else {
 				segment = docs[0];
 				if (segment == undefined) {

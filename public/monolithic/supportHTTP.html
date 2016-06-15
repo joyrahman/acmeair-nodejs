@@ -42,57 +42,100 @@
     function pageLoaded() {
     	updateLoggedInUserWelcome();
     }
-	
-	var WSPort = 8080;
-	dojo.xhrGet({
-		url: "rest/api/support",
-		handleAs: "text",
-		sync: true,
-		load: function(response, ioArgs) {
-			WSPort = response;
-		},
-		error: function(response, ioArgs) {
-			alert(response);
-		}
-	});	
   </script>
   <script type="text/javascript">
-      function getDateString() {
-    	var now = new Date();
-  	  	return now.getHours() + ":" + ("0" + now.getMinutes()).slice(-2) + 
-  	  		":" + ("0" + now.getSeconds()).slice(-2);
-      }
-      
-      function newlinesToBreak(string) {
-    	  return string.replace(/(?:\r\n|\r|\n)/g,'<br/>');
-      }
+	function getDateString() {
+		var now = new Date();
+		return now.getHours() + ":" + ("0" + now.getMinutes()).slice(-2) + 
+			":" + ("0" + now.getSeconds()).slice(-2);
+	}
 
-	  var chatSocket = new WebSocket("ws://"+location.hostname+":"+WSPort); 
-	  chatSocket.onmessage = function(event) {
-		var jsonObj = JSON.parse(event.data);
-		var displayMessage = "<b>" + jsonObj.agent + "</b>: " + getDateString() + " - " + 
-			newlinesToBreak(jsonObj.message);
+	function newlinesToBreak(string) {
+		return string.replace(/(?:\r\n|\r|\n)/g,'<br/>');
+	}
+
+	//add ajax responses to the displayBox div
+	var addToDisplaybox = function(data) {
+		var jsonObj = JSON.parse(data);
+		var displayMessage = "<b>" + jsonObj.agent + "</b>: " + getDateString() + " - " + newlinesToBreak(jsonObj.message);
+		var displayBox = document.getElementById("displayBox");
+
+		displayBox.innerHTML += "<div class=\"their-text\">"+displayMessage+"\n"+"</div>";
+		displayBox.scrollTop = displayBox.scrollHeight;
+	}
+	 
+	//default sent chat message before Watson service is initialized
+	function sendChatMessage() {
+		var chatbox = document.getElementById("chatbox");
+		var displaybox = document.getElementById("displayBox");
+		var message = chatbox.value;
+		var displayMessage = newlinesToBreak(message);
+		var user = dojo.cookie("loggedinuser");
 		
-		displaybox.innerHTML += "<div class=\"their-text\">"+displayMessage+"\n"+"</div>";
+		if(user === undefined || user === null) user = "Me";
+		displayMessage = "<b>" + user + "</b>: " + getDateString()
+			+ " - " + displayMessage;
+		displaybox.innerHTML += "<div class=\"my-text\">"+displayMessage+"\n"+"</div>";
 		displaybox.scrollTop = displaybox.scrollHeight;
-	  }
-	  
-	  function sendChatMessage() {
-	  	var chatbox = document.getElementById("chatbox");
-	  	var displaybox = document.getElementById("displaybox");
-	  	var message = chatbox.value;
-	  	var displayMessage = newlinesToBreak(message);
-	  	var user = dojo.cookie("loggedinuser");
-	  	
-	  	if(user === undefined || user === null) user = "Me";
-	  	displayMessage = "<b>" + user + "</b>: " + getDateString()
-	  		+ " - " + displayMessage;
-	  	displaybox.innerHTML += "<div class=\"my-text\">"+displayMessage+"\n"+"</div>";
-	  	displaybox.scrollTop = displaybox.scrollHeight;
-	  	chatbox.value = "";
-	  	
-	    chatSocket.send(message);
-	  }
+		chatbox.value = "";
+	}
+		
+	//start initialization after the page has been loaded (else there will be synchronous issues)
+	window.onload = function() {
+		//initialize Watson service for this session
+		dojo.xhrGet({
+			url: "rest/api/WatsonSupportInit",
+			handleAs: "text",
+			load: function(response, ioArgs) {
+				addToDisplaybox(response);
+				
+				dojo.xhrPost({
+					//initialize the dialog service for this session
+					url: "rest/api/WatsonSupportService",
+					handleAs: "text",
+					load: function(response, ioArgs) {
+						addToDisplaybox(response);
+						
+						//redefine the send chat message to start using the services after they have been initialized
+						sendChatMessage = function () {
+							var chatbox = document.getElementById("chatbox");
+							var displaybox = document.getElementById("displayBox");
+							var message = chatbox.value;
+							var displayMessage = newlinesToBreak(message);
+							var user = dojo.cookie("loggedinuser");
+							
+							if(user === undefined || user === null) user = "Me";
+							displayMessage = "<b>" + user + "</b>: " + getDateString()
+								+ " - " + displayMessage;
+							displaybox.innerHTML += "<div class=\"my-text\">"+displayMessage+"\n"+"</div>";
+							displaybox.scrollTop = displaybox.scrollHeight;
+							chatbox.value = "";
+							
+							dojo.xhrPost({
+								url: "rest/api/WatsonSupportService",
+								content: {message : message},
+								handleAs: "text",
+								load: function(response, ioArgs) {
+									addToDisplaybox(response);
+									
+								},
+								error: function(response, ioArgs) {
+									addToDisplaybox(response);
+								}
+							});
+						}
+					},
+					error: function(response, ioArgs) {
+						addToDisplaybox(response);
+					}
+				});	
+			},
+			error: function(response, ioArgs) {
+				addToDisplaybox(response);
+			}
+		});				
+	}
+	
   </script>
 </head>
 
@@ -159,7 +202,7 @@
 		
 		<div class="content">
 			<div>
-	            <div id="displaybox" class="chatDisplay"></div>
+	            <div id="displayBox" class="chatDisplay"></div>
 	            <div id="chatEntryArea">
 	            	<textarea class="chatDisplay chatEntry" id="chatbox" placeholder="Enter Text Here..."></textarea>
 	            	<button class="chatButton" id="chatButton" type="button" onclick="sendChatMessage()">Send</button>
