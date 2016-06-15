@@ -143,9 +143,9 @@ module.exports = function (proxyUrl, dbtype, settings) {
 	};
 	
 	countItems = function(dbName, callback /*(error, count)*/) {
-		console.log("Calling count on " + dbName);
+		logger.debug("Calling count on " + dbName);
 		dataaccess.count(dbName, {}, function(error, count) {
-			console.log("Output for "+dbName+" is "+count);
+			logger.debug("Output for "+dbName+" is "+count);
 			if (error) callback(error, null);
 			else {
 				callback(null,count);
@@ -165,7 +165,7 @@ module.exports = function (proxyUrl, dbtype, settings) {
 
     	var path = '/customer/validateid';
     	
-    	console.log("Sending to: " + "http://" + host + ":" + port + customerContextRoot + path);
+    	logger.debug("Sending to: " + "http://" + host + ":" + port + customerContextRoot + path);
     	
     	var options = {
     	    host: host,

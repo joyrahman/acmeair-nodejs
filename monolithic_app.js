@@ -19,9 +19,10 @@ var express = require('express')
   , fs = require('fs')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+var debug = require('debug')('acmeair');
 
 log4js.configure('log4js.json', {});
-var logger = log4js.getLogger('monolithic_app');
+var logger = log4js.getLogger('monolithic');
 logger.setLevel(settings.loggerLevel);
 
 // disable process.env.PORT for now as it cause problem on mesos slave
@@ -29,6 +30,7 @@ var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.mo
 var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 logger.info("host:port=="+host+":"+port);
+
 
 var dbtype = process.env.dbtype || "mongo";
 
@@ -44,18 +46,19 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
+var routes = new require('./monolithic/routes/index.js')(dbtype, settings);
+var loader = new require('./loader/loader.js')(routes, settings);
+
 // Setup express with 4.0.0
 
 var app = express();
-var expressWs = require('express-ws')(app); 
 var morgan         = require('morgan');
 var bodyParser     = require('body-parser');
 var methodOverride = require('method-override');
 var cookieParser = require('cookie-parser');
-var restCtxRoot = settings.monolithicContextRoot;
-var ctxRoot = restCtxRoot.substring(0,restCtxRoot.indexOf("/",restCtxRoot.indexOf("/")+1));
+var ws = require('ws').Server;
 
-app.use(ctxRoot,express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
+app.use(express.static(__dirname + '/public/monolithic'));     	// set the static files location /public/img will be /img for users
 if (settings.useDevLogger)
 	app.use(morgan('dev'));                     		// log every request to the console
 
@@ -72,23 +75,14 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
-var router = express.Router(); 	
-var routes = new require('./monolithic/routes/index.js')(dbtype, settings);
-var loader = new require('./loader/loader.js')(routes, settings);
-var websocket = new require('./websocket/index.js')();
-
-// connect to websocket (may be a better way?)
-app.ws(ctxRoot+ '/supportrequest', function(ws, req) {
-	websocket.chat(ws);
-});
+var router = express.Router(); 		
 
 // main app
 router.post('/login', login);
 router.get('/login/logout', logout);
 
 // flight service
-
-router.post('/flights/queryflights', routes.queryflights);
+router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
 router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
 router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
 router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
@@ -96,33 +90,47 @@ router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.b
 router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
 router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
 
+// probably main app?
 router.get('/config/runtime', routes.getRuntimeInfo);
 router.get('/config/dataServices', routes.getDataServiceInfo);
 router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
-
-router.get('/bookings/config/countBookings', routes.countBookings);
-router.get('/customer/config/countCustomers', routes.countCustomer);
-router.get('/login/config/countSessions', routes.countCustomerSessions);
-router.get('/flights/config/countFlights', routes.countFlights);
-router.get('/flights/config/countFlightSegments', routes.countFlightSegments);
-router.get('/flights/config/countAirports' , routes.countAirports);
-
-router.get('/customer/loader/query', loader.getNumConfiguredCustomers);
-router.get('/customer/loader/load', startLoadCustomerDatabase);
-router.get('/flights/loader/load', startLoadFlightDatabase);
-router.get('/login/loader/load', clearSessionDatabase);
-router.get('/bookings/loader/load', clearBookingDatabase);
+router.get('/config/countBookings', routes.countBookings);
+router.get('/config/countCustomers', routes.countCustomer);
+router.get('/config/countSessions', routes.countCustomerSessions);
+router.get('/config/countFlights', routes.countFlights);
+router.get('/config/countFlightSegments', routes.countFlightSegments);
+router.get('/config/countAirports' , routes.countAirports);
+//router.get('/loaddb', startLoadDatabase);
+router.get('/loader/load', startLoadDatabase);
+router.get('/loader/query', loader.getNumConfiguredCustomers);
 
 // ?
 router.get('/checkstatus', checkStatus);
 
+//for websocket watson dialog service
+router.get('/support', routes.getSupportWSPort);
+
+//for REST API watson dialog service
+router.get('/WatsonSupportInit', routes.getSupportInitInfo);
+router.post('/WatsonSupportService', routes.getSupportService);
+
+
+
 //REGISTER OUR ROUTES so that all of routes will have prefix 
 app.use(settings.monolithicContextRoot, router);
 
-// Only initialize DB after initialization of the authService is done
+
+if (settings.websocketPort != ""){
+	var websocket = new require('./websocket/index.js')(routes, settings);
+	debug("websocketPort", settings.websocketPort );
+	//NOTE: Websocket must have its own port number. It has to be a microservice
+	//Current code conflicts the port number with HTTP & chat will not function.
+	var wss = new ws({port:(process.env.VCAP_APP_PORT || settings.websocketPort)});
+	wss.on('connection', websocket.chat);
+}
+
 var initialized = false;
 var serverStarted = false;
-
 
 initDB();
 
@@ -153,44 +161,14 @@ function logout(req, res){
 }
 
 
-function startLoadCustomerDatabase(req, res){
+function startLoadDatabase(req, res){
 	if (!initialized)
      	{
 		logger.info("please wait for db connection initialized then trigger again.");
 		initDB();
 		res.sendStatus(400);
 	}else
-		loader.startLoadCustomerDatabase(req, res);
-}
-
-function startLoadFlightDatabase(req, res){
-	if (!initialized)
-     	{
-		logger.info("please wait for db connection initialized then trigger again.");
-		initDB();
-		res.sendStatus(400);
-	}else
-		loader.startLoadFlightDatabase(req, res);
-}
-
-function clearSessionDatabase(req, res){
-	if (!initialized)
-     	{
-		logger.info("please wait for db connection initialized then trigger again.");
-		initDB();
-		res.sendStatus(400);
-	}else
-		loader.clearSessionDatabase(req, res);
-}
-
-function clearBookingDatabase(req, res){
-	if (!initialized)
-     	{
-		logger.info("please wait for db connection initialized then trigger again.");
-		initDB();
-		res.sendStatus(400);
-	}else
-		loader.clearBookingDatabase(req, res);
+		loader.startLoadDatabase(req, res);
 }
 
 function initDB(){
