@@ -18,6 +18,7 @@ module.exports = function (isMonolithic, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
+    var debug = require('debug')('flight');
 	var flightCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
@@ -48,19 +49,29 @@ module.exports = function (isMonolithic, dbtype, settings) {
 	};
 			
 	module.queryflights = function(req, res) {
-		logger.debug('querying flights');
-		
 		var fromAirport = req.body.fromAirport;
 		var toAirport = req.body.toAirport;
-		var fromDateWeb = new Date(req.body.fromDate);
-		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
 		var oneWay = (req.body.oneWay == 'true');
+		var fromDateWeb = new Date(req.body.fromDate);
 		var returnDateWeb = new Date(req.body.returnDate);
+		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, function(values){
+			res.send(values)
+			
+		});
+	}
+	
+	module.searchFlights = function (fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
+		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback);
+	}
+	function searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
+		logger.debug('querying flights');
+		
+		//If your acmeair is in another time zone (e.g. Your browser is in EST & Acmeair server is in CST), fromDate will be 1 day behind than fromDateWeb & won't query 
+		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
 		var returnDate;
 		if (!oneWay) {
 			returnDate = new Date(returnDateWeb.getFullYear(), returnDateWeb.getMonth(), returnDateWeb.getDate()); // convert date to local timezone
 		}
-		
 		getFlightByAirportsAndDepartureDate(fromAirport, toAirport, fromDate, function (error, flightSegmentOutbound, flightsOutbound) {
 			logger.debug('flightsOutbound = ' + flightsOutbound);
 			if (flightsOutbound) {
@@ -87,7 +98,9 @@ module.exports = function (isMonolithic, dbtype, settings) {
 						 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10},
 						 {"numPages":1,"flightsOptions": flightsReturn,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
 						], "tripLegs":2};
-					res.send(options);
+					
+					debug('options', options);
+					callback(options);
 				});
 			}
 			else {
@@ -95,11 +108,10 @@ module.exports = function (isMonolithic, dbtype, settings) {
 					[
 					 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
 					], "tripLegs":1};
-				res.send(options);
+				callback(options);
 			}
 		});
-	};
-	
+	};	
 	module.countFlights = function(req,res) {
 		countItems(module.dbNames.flightName, function (error,count){
 			if (error){

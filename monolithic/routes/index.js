@@ -19,14 +19,15 @@ module.exports = function (dbtype, settings) {
     var debug = require('debug')('routes');
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
-	var http = require('http')
+	var watson = require('watson-developer-cloud');
+
+/*	var http = require('http')
 	var flightCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
 	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
-	
+*/	
 	
 	//initialize for Watson services
-	var watson = require('watson-developer-cloud');
 	var vcapUrl = null;
 	var vcapUsername = null;
 	var vcapPassword = null;

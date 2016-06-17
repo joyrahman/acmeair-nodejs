@@ -125,10 +125,11 @@ app.use(settings.monolithicContextRoot, router);
 
 
 if (settings.websocketPort != ""){
-	var websocket = new require('./websocket/index.js')(routes, settings);
+	var websocket = new require('./websocketservice/index.js')(flightRoutes, settings);
 	debug("websocketPort", settings.websocketPort );
-	//NOTE: Websocket must have its own port number. It has to be a microservice
-	//Current code conflicts the port number with HTTP & chat will not function.
+	/*NOTE: Websocket must have its own port number. It cannot run in Cloud Foundry because 
+	*Current code conflicts the port number with HTTP & chat will not function.
+	*/
 	var wss = new ws({port:(process.env.VCAP_APP_PORT || settings.websocketPort)});
 	wss.on('connection', websocket.chat);
 }
