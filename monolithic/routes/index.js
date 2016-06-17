@@ -74,38 +74,6 @@ module.exports = function (dbtype, settings) {
 		dataaccess.insertOne(collectionname, doc, callback)
 	};
 
-	module.checkForValidSessionCookie = function(req, res, next) {
-		logger.debug('checkForValidCookie');
-		var sessionid = req.cookies.sessionid;
-		if (sessionid) {
-			sessiondid = sessionid.trim();
-		}
-		if (!sessionid || sessionid == '') {
-			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
-			res.sendStatus(403);
-			return;
-		}
-	
-		validateSession(sessionid, function(err, customerid) {
-			if (err) {
-				logger.debug('checkForValidCookie - system error validating session so returning 500');
-				res.sendStatus(500);
-				return;
-			}
-			
-			if (customerid) {
-				logger.debug('checkForValidCookie - good session so allowing next route handler to be called');
-				req.acmeair_login_user = customerid;
-				next();
-				return;
-			}
-			else {
-				logger.debug('checkForValidCookie - bad session so returning 403');
-				res.sendStatus(403);
-				return;
-			}
-		});
-	}
 
 	module.login = function(req, res) {
 		logger.debug('logging in user');
@@ -138,6 +106,32 @@ module.exports = function (dbtype, settings) {
 		});
 	};
 
+	function validateCustomer(username, password, callback /* (error, boolean validCustomer) */) {
+		dataaccess.findOne(module.dbNames.customerName, username, function(error, customer){
+				if (error) callback (error, null);
+				else{
+	                if (customer)
+	                {
+	                	callback(null, customer.password == password);
+	                }
+	                else
+	                	callback(null, false)
+				}
+		});
+	};
+	
+	function createSession(customerId, callback /* (error, sessionId) */) {
+		var now = new Date();
+		var later = new Date(now.getTime() + 1000*60*60*24);
+			
+		var document = { "_id" : uuid.v4(), "customerid" : customerId, "lastAccessedTime" : now, "timeoutTime" : later };
+
+		dataaccess.insertOne(module.dbNames.customerSessionName, document, function (error, doc){
+			if (error) callback (error, null)
+			else callback(error, document._id);
+		});
+	}
+
 	module.logout = function(req, res) {
 		logger.debug('logging out user');
 		
@@ -149,152 +143,13 @@ module.exports = function (dbtype, settings) {
 		});
 	};
 
-	module.queryflights = function(req, res) {
-		var fromAirport = req.body.fromAirport;
-		var toAirport = req.body.toAirport;
-		var oneWay = (req.body.oneWay == 'true');
-		var fromDateWeb = new Date(req.body.fromDate);
-		var returnDateWeb = new Date(req.body.returnDate);
-		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, function(values){
-			res.send(values)
-			
-		});
+	function invalidateSession(sessionid, callback /* error */) {
+	    dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) 
 	}
-	
-	module.searchFlights = function (fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
-		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback);
-	}
-	function searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
-		logger.debug('querying flights');
-		
-		//If your acmeair is in another time zone (e.g. Your browser is in EST & Acmeair server is in CST), fromDate will be 1 day behind than fromDateWeb & won't query 
-		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
-		var returnDate;
-		if (!oneWay) {
-			returnDate = new Date(returnDateWeb.getFullYear(), returnDateWeb.getMonth(), returnDateWeb.getDate()); // convert date to local timezone
-		}
-		getFlightByAirportsAndDepartureDate(fromAirport, toAirport, fromDate, function (error, flightSegmentOutbound, flightsOutbound) {
-			logger.debug('flightsOutbound = ' + flightsOutbound);
-			if (flightsOutbound) {
-				for (ii = 0; ii < flightsOutbound.length; ii++) {
-					flightsOutbound[ii].flightSegment = flightSegmentOutbound;
-				}
-			}
-			else {
-				flightsOutbound = [];
-			}
-			if (!oneWay) {
-				getFlightByAirportsAndDepartureDate(toAirport, fromAirport, returnDate, function (error, flightSegmentReturn, flightsReturn) {
-					logger.debug('flightsReturn = ' + JSON.stringify(flightsReturn));
-					if (flightsReturn) {
-						for (ii = 0; ii < flightsReturn.length; ii++) {
-							flightsReturn[ii].flightSegment = flightSegmentReturn;
-						}
-					}
-					else {
-						flightsReturn = [];
-					}
-					var options = {"tripFlights":
-						[
-						 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10},
-						 {"numPages":1,"flightsOptions": flightsReturn,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
-						], "tripLegs":2};
-					
-					debug('options', options);
-					callback(options);
-				});
-			}
-			else {
-				var options = {"tripFlights":
-					[
-					 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
-					], "tripLegs":1};
-				callback(options);
-			}
-		});
-	};
 
-	module.bookflights = function(req, res) {
-		logger.debug('booking flights');
-		
-		var userid = req.body.userid;
-		var toFlight = req.body.toFlightId;
-		var retFlight = req.body.retFlightId;
-		var oneWay = (req.body.oneWayFlight == 'true');
-		
-		logger.debug("toFlight:"+toFlight+",retFlight:"+retFlight);
-		
-		bookFlight(toFlight, userid, function (error, toBookingId) {
-			if (!oneWay) {
-				bookFlight(retFlight, userid, function (error, retBookingId) {
-					var bookingInfo = {"oneWay":false,"returnBookingId":retBookingId,"departBookingId":toBookingId};
-					res.header('Cache-Control', 'no-cache');
-					res.send(bookingInfo);
-				});
-			}
-			else {
-				var bookingInfo = {"oneWay":true,"departBookingId":toBookingId};
-				res.header('Cache-Control', 'no-cache');
-				res.send(bookingInfo);
-			}
-		});
-	};
-
-	module.cancelBooking = function(req, res) {
-		logger.debug('canceling booking');
-		
-		var number = req.body.number;
-		var userid = req.body.userid;
-		
-		cancelBooking(number, userid, function (error) {
-			if (error) {
-				res.send({'status':'error'});
-			}
-			else {
-				res.send({'status':'success'});
-			}
-		});
-	};
-
-	module.bookingsByUser = function(req, res) {
-		logger.debug('listing booked flights by user ' + req.params.user);
-		
-		getBookingsByUser(req.params.user, function(err, bookings) {
-			if (err) {
-				res.sendStatus(500);
-			}
-			res.send(bookings);
-		});
-	};
-
-	module.getCustomerById = function(req, res) {
-		logger.debug('getting customer by user ' + req.params.user);		
-				
-		getCustomer(req.params.user, function(err, customer) {
-		if (err) {
-			res.sendStatus(500);
-		}
-		res.send(customer);
-		});
-	};
-
-	module.putCustomerById = function(req, res) {
-		logger.debug('putting customer by user ' + req.params.user);			
-		
-		updateCustomer(req.params.user, req.body, function(err, customer) {
-			if (err) {
-				res.sendStatus(500);
-			}
-			res.send(customer);
-		});
-	};
-
-	module.toGMTString  = function(req, res) {
-		logger.info('******* running eyecatcher function');
-		var now = new Date().toGMTString();
-		res.send(now);
-	};
-	
+	/*
+	 * STAY
+	 */
 	module.getRuntimeInfo = function(req,res) {
 		var runtimeInfo = [];
 		runtimeInfo.push({"name":"Runtime","description":"NodeJS"});
@@ -534,166 +389,6 @@ module.exports = function (dbtype, settings) {
 		}	
 		
 	};
-
-	function validateCustomer(username, password, callback /* (error, boolean validCustomer) */) {
-		dataaccess.findOne(module.dbNames.customerName, username, function(error, customer){
-				if (error) callback (error, null);
-				else{
-	                if (customer)
-	                {
-	                	callback(null, customer.password == password);
-	                }
-	                else
-	                	callback(null, false)
-				}
-		});
-	};
-
-	function createSession(customerId, callback /* (error, sessionId) */) {
-		var now = new Date();
-		var later = new Date(now.getTime() + 1000*60*60*24);
-			
-		var document = { "_id" : uuid.v4(), "customerid" : customerId, "lastAccessedTime" : now, "timeoutTime" : later };
-
-		dataaccess.insertOne(module.dbNames.customerSessionName, document, function (error, doc){
-			if (error) callback (error, null)
-			else callback(error, document._id);
-		});
-	}
-
-	function validateSession(sessionId, callback /* (error, userid) */) {
-		var now = new Date();
-			
-	    dataaccess.findOne(module.dbNames.customerSessionName, sessionId, function(err, session) {
-			if (err) callback (err, null);
-			else{
-				if (now > session.timeoutTime) {
-					daraaccess.remove(module.dbNames.customerSessionName,{'_id':sessionId}, function(error) {
-						if (error) callback (error, null);
-						else callback(null, null);
-					});
-				}
-				else
-					callback(null, session.customerid);
-			}
-		});
-	}
-
-	function getCustomer(username, callback /* (error, Customer) */) {
-	    dataaccess.findOne(module.dbNames.customerName, username, callback);
-	}
-
-	function updateCustomer(login, customer, callback /* (error, Customer) */) {
-	    dataaccess.update(module.dbNames.customerName, customer,callback)
-	}
-
-	function getBookingsByUser(username, callback /* (error, Bookings) */) {
-		dataaccess.findBy(module.dbNames.bookingName, {'customerId':username},callback)
-	}
-
-	function invalidateSession(sessionid, callback /* error */) {
-	    dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) 
-	}
-
-	function getFlightByAirportsAndDepartureDate(fromAirport, toAirport, flightDate, callback /* error, flightSegment, flights[] */) {
-		logger.debug("getFlightByAirportsAndDepartureDate " + fromAirport + " " + toAirport + " " + flightDate);
-						
-		getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, function(error, flightsegment) {
-			if (error) {
-				logger.error("Hit error:"+error);
-				throw error;
-			}
-			
-			logger.debug("flightsegment = " + JSON.stringify(flightsegment));
-			if (!flightsegment) {
-				callback(null, null, null);
-				return;
-			}
-			
-			var date = new Date(flightDate.getFullYear(), flightDate.getMonth(), flightDate.getDate(),0,0,0,0);
-	
-			var cacheKey = flightsegment._id + "-" + date.getTime();
-			if (settings.useFlightDataRelatedCaching) {
-				var flights = flightCache.get(cacheKey);
-				if (flights) {
-					logger.debug("cache hit - flight search, key = " + cacheKey);
-					callback(null, flightsegment, (flights == "NULL" ? null : flights));
-					return;
-				}
-				logger.debug("cache miss - flight search, key = " + cacheKey + " flightCache size = " + flightCache.size());
-			}
-			var searchCriteria = {flightSegmentId: flightsegment._id, scheduledDepartureTime: date};
-			dataaccess.findBy(module.dbNames.flightName, searchCriteria, function(err, docs) {
-				if (err) {
-					logger.error("hit error:"+err);
-					callback (err, null, null);
-				}else
-				{
-					("after cache miss - key = " + cacheKey + ", docs = " + JSON.stringify(docs));
-	
-					var docsEmpty = !docs || docs.length == 0;
-				
-					if (settings.useFlightDataRelatedCaching) {
-						var cacheValue = (docsEmpty ? "NULL" : docs);
-						("about to populate the cache with flights key = " + cacheKey + " with value of " + JSON.stringify(cacheValue));
-						flightCache.set(cacheKey, cacheValue, flightDataCacheTTL);
-						("after cache populate with key = " + cacheKey + ", flightCacheSize = " + flightCache.size())
-					}
-					callback(null, flightsegment, docs);
-				}
-			});
-		});
-	}
-
-	function getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, callback /* error, flightsegment */) {
-		var segment;
-		
-		if (settings.useFlightDataRelatedCaching) {
-			segment = flightSegmentCache.get(fromAirport+toAirport);
-			if (segment) {
-				("cache hit - flightsegment search, key = " + fromAirport+toAirport);
-				callback(null, (segment == "NULL" ? null : segment));
-				return;
-			}
-			("cache miss - flightsegment search, key = " + fromAirport+toAirport + ", flightSegmentCache size = " + flightSegmentCache.size());
-		}
-		debug('module.dbNames.flightSegmentName', module.dbNames.flightSegmentName);
-		debug('fromAirport', fromAirport);
-		debug('toAirport', toAirport);
-		
-		dataaccess.findBy(module.dbNames.flightSegmentName,{originPort: fromAirport, destPort: toAirport},function(err, docs) {
-			if (err) callback (err, null);
-			else {
-				segment = docs[0];
-				if (segment == undefined) {
-					segment = null;
-				}
-				if (settings.useFlightDataRelatedCaching) {
-					("about to populate the cache with flightsegment key = " + fromAirport+toAirport + " with value of " + JSON.stringify(segment));
-					flightSegmentCache.set(fromAirport+toAirport, (segment == null ? "NULL" : segment), flightDataCacheTTL);
-					("after cache populate with key = " + fromAirport+toAirport + ", flightSegmentCacheSize = " + flightSegmentCache.size())
-				}
-				callback(null, segment);
-			}
-		});
-	}
-
-
-	function bookFlight(flightId, userid, callback /* (error, bookingId) */) {
-			
-		var now = new Date();
-		var docId = uuid.v4();
-	
-		var document = { "_id" : docId, "customerId" : userid, "flightId" : flightId, "dateOfBooking" : now };
-		
-		dataaccess.insertOne(module.dbNames.bookingName,document,function(err){
-			callback(err, docId);
-		});
-	}
-
-	function cancelBooking(bookingid, userid, callback /*(error)*/) {
-		dataaccess.remove(module.dbNames.bookingName,{'_id':bookingid, 'customerId':userid}, callback)
-	}
 
 	return module;
 }

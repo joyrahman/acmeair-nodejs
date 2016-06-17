@@ -192,7 +192,7 @@ module.exports = function (settings, dbName) {
 			  }
 		});
 	};
-
+	
 	module.update = function(collectionname, doc, callback /* (error, doc) */) {
 		dbclient.collection(collectionname, function(error, collection){
 			  if (error){

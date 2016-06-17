@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (dbtype, settings) {
+module.exports = function (isMonolithic, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -29,7 +29,8 @@ module.exports = function (dbtype, settings) {
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
 	
-	var databaseName = process.env.DATABASE_NAME || "acmeair_flightdb";
+	var databaseName = ((isMonolithic == true) ? "acmeair" : process.env.DATABASE_NAME || "acmeair_flightdb");
+	//var databaseName = process.env.DATABASE_NAME || "acmeair_flightdb";
 	var dataaccess = new require(daModuleName)(settings, databaseName);
 	
 	module.dbNames = dataaccess.dbNames

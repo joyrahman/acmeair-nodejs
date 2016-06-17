@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (proxyUrl, dbtype, settings) {
+module.exports = function (isMonolithic, proxyUrl, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -25,8 +25,9 @@ module.exports = function (proxyUrl, dbtype, settings) {
 
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
-	
-	var databaseName = process.env.DATABASE_NAME || "acmeair_customerdb";
+
+	var databaseName = ((isMonolithic == true) ? "acmeair" : process.env.DATABASE_NAME || "acmeair_bookingdb");
+	//var databaseName = process.env.DATABASE_NAME || "acmeair_customerdb";
 	var dataaccess = new require(daModuleName)(settings, databaseName);
 	
 	// auth service setup code ****
@@ -113,39 +114,56 @@ module.exports = function (proxyUrl, dbtype, settings) {
 	
 	function validateSession(sessionId, callback /* (error, userid) */) {
 
-		var path = authContextRoot + "/login/authcheck/" + sessionId;
-		
-		http.globalAgent.keepAlive = true;
-     	var options = {
-		hostname: host,
-	 	port: port,
-	    	path: path,
-	    	method: "GET",
-	    	headers: {
-	    	      'Content-Type': 'application/json'
-	    	}
-     	}
+		if (isMonolithic == true){
+			var now = new Date();
+			
+		    dataaccess.findOne(module.dbNames.customerSessionName, sessionId, function(err, session) {
+				if (err) callback (err, null);
+				else{
+					if (now > session.timeoutTime) {
+						daraaccess.remove(module.dbNames.customerSessionName,{'_id':sessionId}, function(error) {
+							if (error) callback (error, null);
+							else callback(null, null);
+						});
+					}
+					else
+						callback(null, session.customerid);
+				}
+			});
+		}else{
+			var path = authContextRoot + "/login/authcheck/" + sessionId;
+			
+			http.globalAgent.keepAlive = true;
+	     	var options = {
+			hostname: host,
+		 	port: port,
+		    	path: path,
+		    	method: "GET",
+		    	headers: {
+		    	      'Content-Type': 'application/json'
+		    	}
+	     	}
 
-    	logger.debug('validateSession request:'+JSON.stringify(options));
+	    	logger.debug('validateSession request:'+JSON.stringify(options));
 
-     	var request = http.request(options, function(response){
-      		var data='';
-      		response.setEncoding('utf8');
-      		response.on('data', function (chunk) {
-	   			data +=chunk;
-      		});
-       		response.on('end', function(){
-       			if (response.statusCode>=400)
-       				callback("StatusCode:"+ response.statusCode+",Body:"+data,null);
-       			else
-       				callback(null, JSON.parse(data).customerid);
-        	})
-     	});
-     	request.on('error', function(e) {
-   			callback('problem with request: ' + e.message, null);
-     	});
-     	request.end();
-		
+	     	var request = http.request(options, function(response){
+	      		var data='';
+	      		response.setEncoding('utf8');
+	      		response.on('data', function (chunk) {
+		   			data +=chunk;
+	      		});
+	       		response.on('end', function(){
+	       			if (response.statusCode>=400)
+	       				callback("StatusCode:"+ response.statusCode+",Body:"+data,null);
+	       			else
+	       				callback(null, JSON.parse(data).customerid);
+	        	})
+	     	});
+	     	request.on('error', function(e) {
+	   			callback('problem with request: ' + e.message, null);
+	     	});
+	     	request.end();
+		}
 	}
 
 	module.getCustomerById = function(req, res) {

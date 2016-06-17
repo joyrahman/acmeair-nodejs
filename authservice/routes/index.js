@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (proxyUrl, dbtype, settings) {
+module.exports = function (isMonolithic, proxyUrl, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -26,7 +26,8 @@ module.exports = function (proxyUrl, dbtype, settings) {
 	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
 	logger.info("Use dataaccess:"+daModuleName);
 	
-	var databaseName = process.env.DATABASE_NAME || "acmeair_sessiondb";
+	var databaseName = ((isMonolithic == true) ? "acmeair" : process.env.DATABASE_NAME || "acmeair_sessiondb");
+	//var databaseName = process.env.DATABASE_NAME || "acmeair_sessiondb";
 	
 	var dataaccess = new require(daModuleName)(settings, databaseName);
 			
@@ -155,51 +156,66 @@ module.exports = function (proxyUrl, dbtype, settings) {
 	
 	validateCustomer = function(login, password, callback) {
 		
-		// make service call to customerService
-		http.globalAgent.keepAlive = true;
-		var querystring = require('querystring');
-    	var dataString = querystring.stringify({
-    	      login: login,
-    	      password: password
-    	    });
+		if (isMonolithic == true){
+			dataaccess.findOne(module.dbNames.customerName, username, function(error, customer){
+				if (error) callback (error, null);
+				else{
+	                if (customer)
+	                {
+	                	callback(null, customer.password == password);
+	                }
+	                else
+	                	callback(null, false)
+				}
+			});
+		}else{
+			// make service call to customerService
+			http.globalAgent.keepAlive = true;
+			var querystring = require('querystring');
+	    	var dataString = querystring.stringify({
+	    	      login: login,
+	    	      password: password
+	    	    });
 
-    	var path = '/customer/validateid';
-    	
-    	logger.debug("Sending to: " + "http://" + host + ":" + port + customerContextRoot + path);
-    	
-    	var options = {
-    	    host: host,
-    	    port: port,
-    	    path: customerContextRoot + path,
-    	    method: 'POST',
-    	    headers: {
-    	        'Content-Type': 'application/x-www-form-urlencoded',
-    	        'Content-Length': Buffer.byteLength(dataString)
-    	    }
-    	};
-    		
-	    var request = http.request(options, function(response){
-	      		var data='';
-	      		response.setEncoding('utf8');
-	      		response.on('data', function (chunk) {
-		   			data +=chunk;
-	      		});
-	      		 response.on('end', function(){
-	      			if (response.statusCode>=400)
-	 				   callback("StatusCode:"+ response.statusCode+",Body:"+data, null);
-	 			   	else{
-	 					var jsonData = JSON.parse(data);
-	 					logger.debug("returning " + jsonData.validCustomer);
-	 					callback(null, jsonData.validCustomer);
-	 	            }
-	        	})
-	    });
-	    request.on('error', function(e) {
-	    	 callback("StatusCode:500,Body:"+data, null);
-	    });
-	    
-	    request.write(dataString);
-	   	request.end();
+	    	var path = '/customer/validateid';
+	    	
+	    	logger.debug("Sending to: " + "http://" + host + ":" + port + customerContextRoot + path);
+	    	
+	    	var options = {
+	    	    host: host,
+	    	    port: port,
+	    	    path: customerContextRoot + path,
+	    	    method: 'POST',
+	    	    headers: {
+	    	        'Content-Type': 'application/x-www-form-urlencoded',
+	    	        'Content-Length': Buffer.byteLength(dataString)
+	    	    }
+	    	};
+	    		
+		    var request = http.request(options, function(response){
+		      		var data='';
+		      		response.setEncoding('utf8');
+		      		response.on('data', function (chunk) {
+			   			data +=chunk;
+		      		});
+		      		 response.on('end', function(){
+		      			if (response.statusCode>=400)
+		 				   callback("StatusCode:"+ response.statusCode+",Body:"+data, null);
+		 			   	else{
+		 					var jsonData = JSON.parse(data);
+		 					logger.debug("returning " + jsonData.validCustomer);
+		 					callback(null, jsonData.validCustomer);
+		 	            }
+		        	})
+		    });
+		    request.on('error', function(e) {
+		    	 callback("StatusCode:500,Body:"+data, null);
+		    });
+		    
+		    request.write(dataString);
+		   	request.end();
+		}
+		
 	}
 	
 	createSession = function(customerId, callback /* (error, session) */) {
@@ -233,10 +249,44 @@ module.exports = function (proxyUrl, dbtype, settings) {
 			}
 		});
 	}
-	
+
 	invalidateSession = function(sessionid, callback /* error */) {
 		logger.debug("invalidate session in DB:"+sessionid);
 	    dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) ;
+	}
+	
+	//Monolithic specific function
+	module.checkForValidSessionCookie = function(req, res, next) {
+		logger.debug('checkForValidCookie');
+		var sessionid = req.cookies.sessionid;
+		if (sessionid) {
+			sessiondid = sessionid.trim();
+		}
+		if (!sessionid || sessionid == '') {
+			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
+			res.sendStatus(403);
+			return;
+		}
+	
+		validateSession(sessionid, function(err, customerid) {
+			if (err) {
+				logger.debug('checkForValidCookie - system error validating session so returning 500');
+				res.sendStatus(500);
+				return;
+			}
+			
+			if (customerid) {
+				logger.debug('checkForValidCookie - good session so allowing next route handler to be called');
+				req.acmeair_login_user = customerid;
+				next();
+				return;
+			}
+			else {
+				logger.debug('checkForValidCookie - bad session so returning 403');
+				res.sendStatus(403);
+				return;
+			}
+		});
 	}
 
 	return module;

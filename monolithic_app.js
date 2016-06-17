@@ -46,6 +46,10 @@ if(process.env.VCAP_SERVICES){
 }
 logger.info("db type=="+dbtype);
 
+var authRoutes = new require('./authservice/routes/index.js')(true,null,dbtype,settings); 
+var flightRoutes = new require('./flightservice/routes/index.js')(true,dbtype,settings); 
+var bookingRoutes = new require('./bookingservice/routes/index.js')(true,null,dbtype,settings); 
+var customerRoutes = new require('./customerservice/routes/index.js')(true,null,dbtype,settings); 
 var routes = new require('./monolithic/routes/index.js')(dbtype, settings);
 var loader = new require('./loader/loader.js')(routes, settings);
 
@@ -82,13 +86,13 @@ router.post('/login', login);
 router.get('/login/logout', logout);
 
 // flight service
-router.post('/flights/queryflights', routes.checkForValidSessionCookie, routes.queryflights);
-router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
-router.post('/bookings/cancelbooking', routes.checkForValidSessionCookie, routes.cancelBooking);
-router.get('/bookings/byuser/:user', routes.checkForValidSessionCookie, routes.bookingsByUser);
+router.post('/flights/queryflights', authRoutes.checkForValidSessionCookie, flightRoutes.queryflights);
+router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflights);
+router.post('/bookings/cancelbooking', authRoutes.checkForValidSessionCookie, bookingRoutes.cancelBooking);
+router.get('/bookings/byuser/:user', authRoutes.checkForValidSessionCookie, bookingRoutes.bookingsByUser);
 
-router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
-router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+router.get('/customer/byid/:user', authRoutes.checkForValidSessionCookie, customerRoutes.getCustomerById);
+router.post('/customer/byid/:user', authRoutes.checkForValidSessionCookie, customerRoutes.putCustomerById);
 
 // probably main app?
 router.get('/config/runtime', routes.getRuntimeInfo);
@@ -173,7 +177,7 @@ function startLoadDatabase(req, res){
 
 function initDB(){
     if (initialized ) return;
-		routes.initializeDatabaseConnections(function(error) {
+	routes.initializeDatabaseConnections(function(error) {
 	if (error) {
 		logger.info('Error connecting to database - exiting process: '+ error);
 		// Do not stop the process for debug in container service
@@ -184,6 +188,43 @@ function initDB(){
 	logger.info("Initialized database connections");
 	startServer();
 	});
+
+	authRoutes.initializeDatabaseConnections(function(error) {
+		if (error) {
+			logger.info('Error connecting to database - exiting process: '+ error);
+			// Do not stop the process for debug in container service
+			//process.exit(1); 
+		}else{
+			logger.info("Initialized auth database connections");
+		}
+		});
+	flightRoutes.initializeDatabaseConnections(function(error) {
+		if (error) {
+			logger.info('Error connecting to database - exiting process: '+ error);
+			// Do not stop the process for debug in container service
+			//process.exit(1); 
+		}else{
+			logger.info("Initialized flight database connections");
+		}
+		});
+	bookingRoutes.initializeDatabaseConnections(function(error) {
+		if (error) {
+			logger.info('Error connecting to database - exiting process: '+ error);
+			// Do not stop the process for debug in container service
+			//process.exit(1); 
+		}else{
+			logger.info("Initialized booking database connections");
+		}
+		});
+	customerRoutes.initializeDatabaseConnections(function(error) {
+		if (error) {
+			logger.info('Error connecting to database - exiting process: '+ error);
+			// Do not stop the process for debug in container service
+			//process.exit(1); 
+		}else{
+			logger.info("Initialized customer database connections");
+		}
+		});
 }
 
 

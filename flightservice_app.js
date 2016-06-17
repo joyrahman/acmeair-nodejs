@@ -73,7 +73,7 @@ app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
 var router = express.Router(); 	
-var routes = new require('./flightservice/routes/index.js')(dbtype, settings); 
+var routes = new require('./flightservice/routes/index.js')(false, dbtype, settings); 
 var loader = new require('./loader/loader.js')(routes, settings);
 
 router.post('/flights/queryflights', routes.queryflights);

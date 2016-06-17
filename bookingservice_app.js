@@ -83,7 +83,7 @@ var serverStarted = false;
 
 util.getServiceProxy(function(proxyUrl){
 	proxy =  (proxyUrl || process.env.PROXY);
-	routes = new require('./bookingservice/routes/index.js')(proxy, dbtype, settings); 
+	routes = new require('./bookingservice/routes/index.js')(false, proxy, dbtype, settings); 
 	loader = new require('./loader/loader.js')(routes, settings);
 
 	router.post('/bookings/bookflights', routes.checkForValidSessionCookie, routes.bookflights);
