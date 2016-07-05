@@ -20,18 +20,17 @@
 	"supportservice_port": 9085,
 	"supportContextRoot": "/acmeair-ss",
 
+    "websocketPort" : 9001,
+
 	"watsonUrl" : "https://gateway.watsonplatform.net/dialog/api",
-	"watsonUsername" : "5ada211c-f975-4c8f-affd-c6625ea576a8",
-	"watsonPassword" : "cNoVsLW74NKG",
+	"watsonUsername" : "watsonUser",
+	"watsonPassword" : "watsonPass",
 	"watsonVersion" : "v1",
 	"watsonDialogFile" : "acmeair-v1.xml",
 	"watsonDialogName" : "acmeair",
 	"watsonUpdateDialog" : true,
-
-	"websocketPort" : "8001",
-
 		
-	"mongoHost" : "omni.canlab.ibm.com",
+	"mongoHost" : "127.0.0.1",
 	"mongoPort" : 27017,
 	"mongoConnectionPoolSize": 10,
 

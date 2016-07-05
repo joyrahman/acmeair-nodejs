@@ -86,6 +86,12 @@ module.exports = function(loadUtil,settings) {
 		    }
 		});
 
+	module.getSupportWSPort = function(req,res) {
+		var port = settings.websocketPort.toString();
+		res.send(port);
+	};
+
+
 	module.chat = function(ws) {
 		ws.send(JSON.stringify({"agent" : "Server Message", "message":"Please wait for a moment. Agent will be with you shortly."}));
 	    var params = { dialog_id: dialog_id};

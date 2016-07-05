@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
-module.exports = function (isMonolithic, proxyUrl, dbtype, settings) {
+module.exports = function (isMonolithic,monoDataaccess, proxyUrl, dbtype, settings) {
     var module = {};
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
@@ -29,7 +29,7 @@ module.exports = function (isMonolithic, proxyUrl, dbtype, settings) {
 	var databaseName = ((isMonolithic == true) ? "acmeair" : process.env.DATABASE_NAME || "acmeair_sessiondb");
 	//var databaseName = process.env.DATABASE_NAME || "acmeair_sessiondb";
 	
-	var dataaccess = new require(daModuleName)(settings, databaseName);
+	var dataaccess = ((isMonolithic == true) ? monoDataaccess : new require(daModuleName)(settings, databaseName));
 			
 	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
 		dataaccess.removeAll(collectionname, callback)

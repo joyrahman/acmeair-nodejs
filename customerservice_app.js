@@ -93,7 +93,7 @@ var serverStarted = false;
 util.getServiceProxy(function(proxyUrl){
 	
 	proxy =  (proxyUrl || process.env.PROXY);
-	routes = new require('./customerservice/routes/index.js')(false, proxy, dbtype, settings); 
+	routes = new require('./customerservice/routes/index.js')(false, null, proxy, dbtype, settings); 
 	loader = new require('./loader/loader.js')(routes, settings);
 
 	router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);

@@ -66,6 +66,18 @@
         "maxLogSize": 20480,
         "backups": 3,
         "category": "monolithic"
+      },{
+        "type": "file",
+        "filename": "acmeair_support.log",
+        "maxLogSize": 20480,
+        "backups": 3,
+        "category": "support"
+      },{
+        "type": "file",
+        "filename": "acmeair_mongo.log",
+        "maxLogSize": 20480,
+        "backups": 3,
+        "category": "mongo"
       }
   ]
 }

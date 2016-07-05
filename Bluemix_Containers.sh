@@ -5,17 +5,11 @@ MONGO_BRIDGE=
 SD_URL=https://servicediscovery.ng.bluemix.net
 SD_TOKEN=
 
-docker build -f acmeair-nodejs/Dockerfile_BlueMix_main -t acmeair_node_mainservice .
-docker build -f acmeair-nodejs/Dockerfile_BlueMix_as -t acmeair_node_authservice .
-docker build -f acmeair-nodejs/Dockerfile_BlueMix_bs -t acmeair_node_bookingservice .
-docker build -f acmeair-nodejs/Dockerfile_BlueMix_cs -t acmeair_node_customerservice .
-docker build -f acmeair-nodejs/Dockerfile_BlueMix_fs -t acmeair_node_flightservice .
-
-docker tag -f acmeair_node_mainservice:latest ${REGISTRY}/${NAME_SPACE}/acmeair_node_mainservice:latest
-docker tag -f acmeair_node_authservice:latest ${REGISTRY}/${NAME_SPACE}/acmeair_node_authservice:latest
-docker tag -f acmeair_node_bookingservice:latest ${REGISTRY}/${NAME_SPACE}/acmeair_node_bookingservice:latest
-docker tag -f acmeair_node_customerservice:latest ${REGISTRY}/${NAME_SPACE}/acmeair_node_customerservice:latest
-docker tag -f acmeair_node_flightservice:latest ${REGISTRY}/${NAME_SPACE}/acmeair_node_flightservice:latest
+docker build -f acmeair-nodejs/Dockerfile_BlueMix_main -t ${REGISTRY}/${NAME_SPACE}/acmeair_node_mainservice .
+docker build -f acmeair-nodejs/Dockerfile_BlueMix_as -t ${REGISTRY}/${NAME_SPACE}/acmeair_node_authservice .
+docker build -f acmeair-nodejs/Dockerfile_BlueMix_bs -t ${REGISTRY}/${NAME_SPACE}/acmeair_node_bookingservice .
+docker build -f acmeair-nodejs/Dockerfile_BlueMix_cs -t ${REGISTRY}/${NAME_SPACE}/acmeair_node_customerservice .
+docker build -f acmeair-nodejs/Dockerfile_BlueMix_fs -t ${REGISTRY}/${NAME_SPACE}/acmeair_node_flightservice .
 
 docker push ${REGISTRY}/${NAME_SPACE}/acmeair_node_mainservice
 docker push ${REGISTRY}/${NAME_SPACE}/acmeair_node_authservice
