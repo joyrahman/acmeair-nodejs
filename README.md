@@ -48,36 +48,27 @@ Assume MongoDB started on 127.0.0.1:27017
 
 ### Run Acmeair in Monolithic on Local
 
-	node app.js
+	node monolithic_app.js
+	
+### Access Monolithic Application 
 
-### Run Acmeair in Micro-Service on Local
+	http://localhost:9085/acmeair-monolithic	
+
+### Run Acmeair in Micro-Service on Local (See Docker Instructions -> much easier)
+	
+	install nginx and startup using the nginx.conf file
 	
 	node authservice_app.js
-	
-	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
 	node customerservice_app.js	
+	node flightservice_app.js
+	node bookingservice_app.js
+	node main_app.js
 	
-	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
-	node flightbookingservice_app.js
+	*ports are hardcoded in nginx.conf and settings.json
 	
-	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
-	set CUSTOMER_SERVICE=localhost:9081 or export CUSTOMER_SERVICE=localhost:9081
-	set FLIGHTBOOKING_SERVICE=localhost:9082 or export FLIGHTBOOKING_SERVICE=localhost:9082
-	node app.js
-	
-### Run Acmeair in Micro-Service with Netflix Hystrix Stream enabled on Local
+### Access Micro-Service Application 
 
-	
-	node authservice_app.js
-	set AUTH_SERVICE=localhost:9443 or export AUTH_SERVICE=localhost:9443
-	set enableHystrix=true or export enableHystrix=true
-	
-	node app.js
-	
-	
-### Access Application 
-
-	http://localhost:9080/
+	http://localhost/acmeair
 	
 	Load Database 
 		preload 10k customers uid[0..9999]@email.com:password, 5 days' flights.  Defined in loader/loader-settings.json
@@ -89,9 +80,6 @@ Assume MongoDB started on 127.0.0.1:27017
 	Account
 		update account info
 	Logout	
-	
-	If hystrix is enabled, it is available at : http://localhost:9080/rest/api/hystrix.stream
-	
 	
 	
 ## More on Configurations

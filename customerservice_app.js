@@ -19,6 +19,7 @@ var express = require('express')
   , fs = require('fs')
   , log4js = require('log4js');
 var settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+var util = require('./util/util');
 
 log4js.configure('log4js.json', {});
 var logger = log4js.getLogger('customerservice_app');
@@ -30,28 +31,11 @@ var host = (process.env.VCAP_APP_HOST || 'localhost');
 
 var acceptedOrigin = (process.env.MAIN_SERVICE || 'localhost:9080');
 
+util.registerService(process.env.SERVICE_NAME, port);
+
 logger.info("host:port=="+host+":"+port);
 
 //Running customerservice, so assume authservice is running also
-var authService;
-
-var authServiceLocation = process.env.AUTH_SERVICE;
-if (authServiceLocation) 
-{
-	logger.info("Use authservice:" + authServiceLocation);
-	var authModule;
-	if (authServiceLocation.indexOf(":")>0) // This is to use micro services
-		authModule = "acmeairhttp";
-	else
-		authModule= authServiceLocation;
-	
-	authService = new require('./'+authModule+'/index.js')(settings);
-	if (authService && "true"==process.env.enableHystrix) // wrap into command pattern
-	{
-		logger.info("Enabled Hystrix");
-		authService = new require('./acmeaircmd/index.js')(authService, settings);
-	}
-}
 
 var dbtype = process.env.dbtype || "mongo";
 
@@ -96,40 +80,38 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
+var router = express.Router();
 
-var authService;
-var authServiceLocation = process.env.AUTH_SERVICE;
+//registerService(process.env.SERVICE_NAME, port);
 
-if (authServiceLocation) 
-{
-	logger.info("Use authservice:"+authServiceLocation);
-	var authModule;
-	if (authServiceLocation.indexOf(":")>0) // This is to use micro services
-		authModule = "acmeairhttp";
-	else
-		authModule= authServiceLocation;
-	
-	authService = new require('./'+authModule+'/index.js')(settings);
-	if (authService && "true"==process.env.enableHystrix) // wrap into command pattern
-	{
-		logger.info("Enabled Hystrix");
-		authService = new require('./acmeaircmd/index.js')(authService, settings);
-	}
-}
-
-var router = express.Router(); 				
-var routes = new require('./customerservice/routes/index.js')(dbtype,authService,settings); 
-
-router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
-router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
-
-// REGISTER OUR ROUTES so that all of routes will have prefix 
-app.use(settings.customerContextRoot, router);
-
+var routes;
+var loader;
 var initialized = false;
 var serverStarted = false;
 
-initDB();
+
+util.getServiceProxy(function(proxyUrl){
+	
+	proxy =  (proxyUrl || process.env.PROXY);
+	routes = new require('./customerservice/routes/index.js')(false, null, proxy, dbtype, settings); 
+	loader = new require('./loader/loader.js')(routes, settings);
+
+	router.get('/customer/byid/:user', routes.checkForValidSessionCookie, routes.getCustomerById);
+	router.post('/customer/byid/:user', routes.checkForValidSessionCookie, routes.putCustomerById);
+	router.post('/customer/validateid', routes.validateId);
+	router.get('/customer/config/countCustomers', routes.countCustomer);
+	router.get('/customer/loader/load', startLoadCustomerDatabase);
+	router.get('/customer/loader/query', loader.getNumConfiguredCustomers);
+
+	// REGISTER OUR ROUTES so that all of routes will have prefix 
+	app.use(settings.customerContextRoot, router);
+	
+
+
+	initDB();
+});
+
+
 
 function initDB(){
     if (initialized ) return;
@@ -155,13 +137,17 @@ function startServer() {
 	console.log('Application started port ' + port);
 }
 
+function startLoadCustomerDatabase(req, res){
+	if (!initialized)
+     	{
+		logger.info("please wait for db connection initialized then trigger again.");
+		initDB();
+		res.sendStatus(400);
+	} else {
+		loader.startLoadCustomerDatabase(req, res);
+	}
+}
+
 function checkStatus(req, res){
 	res.sendStatus(200);
 }
-
-
-
-
-
-
-
