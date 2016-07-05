@@ -72,7 +72,7 @@ function initDB(){
     if (initialized ) return;
 	var SLEEP_TIME= 5000;
 	var registrationId = setInterval(function() {
-    dataaccess.initializeDatabaseConnections(function(error) {
+      dataaccess.initializeDatabaseConnections(function(error) {
     	if (error) {
     		logger.info('Error connecting to database - exiting process: '+ error);
     		// Do not stop the process for debug in container service
@@ -167,7 +167,7 @@ function initDB(){
         	app.use(settings.monolithicContextRoot, router);
 
     	}
-   	});
+   	  });
 	}, SLEEP_TIME);
 	startServer();
 }
