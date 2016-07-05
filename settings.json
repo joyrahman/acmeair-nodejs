@@ -11,22 +11,6 @@
 	"customerservice_port": 9081,
 	"customerContextRoot": "/acmeair-cs/rest/api",
 	
-<<<<<<< HEAD
-	"flightbookingservice_port": 9082,
-	"flightbookingContextRoot": "/acmeair-fbs/rest/api",
-
-	"watsonUrl" : "https://gateway.watsonplatform.net/dialog/api",
-	"watsonUsername" : "watsonUser",
-	"watsonPassword" : "watsonPass",
-	"watsonVersion" : "v1",
-	"watsonDialogFile" : "acmeair-v1.xml",
-	"watsonDialogName" : "acmeair",
-	"watsonUpdateDialog" : true,
-	"websocketPort" : "",
-	
-	
-	"mongoHost" : "compose.dblayer.com",
-=======
 	"flightservice_port": 9082,
 	"flightContextRoot": "/acmeair-fs/rest/api",
 	
@@ -47,7 +31,6 @@
 	"watsonUpdateDialog" : true,
 		
 	"mongoHost" : "127.0.0.1",
->>>>>>> refs/heads/nginx
 	"mongoPort" : 27017,
 	"mongoConnectionPoolSize": 10,
 	"mongoUsername": "mongo",
@@ -70,12 +53,6 @@
 	"flightDataCacheTTL" :  1200000,
 	"flightDataCacheMaxSize" : 100000,
 	
-<<<<<<< HEAD
-	"loggerLevel" : "DEBUG",
-	"useDevLogger" : false     
-}
-=======
 	"loggerLevel" : "INFO",
 	"useDevLogger" : false     
 }
->>>>>>> refs/heads/nginx

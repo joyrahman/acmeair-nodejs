@@ -57,19 +57,13 @@ From the Bluemix UI, go to ServiceProxyTenant container, then record public IP a
 
 	On local docker server, Go to the root directory of acmeair-nodejs
 
-#### Option 1 - Automated
-	Update the values at the top of Bluemix_Containers.sh and then invoke it.
-	
-### Option 2 - Manual
 * Create the images for each service with the following commands:
 
-* Create the images for each service with the following commands:
-
-	docker build -f acmeair-nodejs/Dockerfile_Bluemix_main -t acmeair_node_mainservice .
-	docker build -f acmeair-nodejs/Dockerfile_Bluemix_as -t acmeair_node_authservice .
-	docker build -f acmeair-nodejs/Dockerfile_Bluemix_bs -t acmeair_node_bookingservice .
-	docker build -f acmeair-nodejs/Dockerfile_Bluemix_cs -t acmeair_node_customerservice .
-	docker build -f acmeair-nodejs/Dockerfile_Bluemix_fs -t acmeair_node_flightservice .
+	docker build -f acmeair-nodejs/Dockerfile_Bluemix_main -t main .
+	docker build -f acmeair-nodejs/Dockerfile_Bluemix_as -t auth .
+	docker build -f acmeair-nodejs/Dockerfile_Bluemix_bs -t booking .
+	docker build -f acmeair-nodejs/Dockerfile_Bluemix_cs -t customer .
+	docker build -f acmeair-nodejs/Dockerfile_Bluemix_fs -t flight .
 
 
 * Tag the image with Bluemix Registry name with the following command:
@@ -77,33 +71,33 @@ From the Bluemix UI, go to ServiceProxyTenant container, then record public IP a
 	docker tag <service>.registry.<bluemi region>.bluemix.net/<namespace>/<image name>:latest
 
 	Examples: My namespace is wasperf.
-	docker tag -f acmeair_node_main registry.ng.bluemix.net/wasperf/acmeair_node_mainservice:latest
-	docker tag -f acmeair_node_auth registry.ng.bluemix.net/wasperf/acmeair_node_authservice:latest
-	docker tag -f acmeair_node_booking registry.ng.bluemix.net/wasperf/acmeair_node_bookingservice:latest
-	docker tag -f acmeair_node_customer registry.ng.bluemix.net/wasperf/acmeair_node_customerservice:latest
-	docker tag -f acmeair_node_flight registry.ng.bluemix.net/wasperf/acmeair_node_flightservice:latest
+	docker tag main:latest registry.ng.bluemix.net/wasperf/main:latest
+	docker tag auth:latest registry.ng.bluemix.net/wasperf/auth:latest
+	docker tag booking:latest registry.ng.bluemix.net/wasperf/booking:latest
+	docker tag customer:latest registry.ng.bluemix.net/wasperf/customer:latest
+	docker tag flight:latest registry.ng.bluemix.net/wasperf/flight:latest
 
 * Push the image to Bluemix with the following command:
 
 	docker push registry.<bluemi region>.bluemix.net/<namespace>/<image name>:latest
 
 	Examples: My namespace is wasperf.
-	docker push registry.ng.bluemix.net/wasperf/acmeair_node_mainservice
-	docker push registry.ng.bluemix.net/wasperf/acmeair_node_authservice
-	docker push registry.ng.bluemix.net/wasperf/acmeair_node_bookingservice
-	docker push registry.ng.bluemix.net/wasperf/acmeair_node_customerservice
-	docker push registry.ng.bluemix.net/wasperf/acmeair_node_flightservice
+	docker push registry.ng.bluemix.net/wasperf/main:latest
+	docker push registry.ng.bluemix.net/wasperf/auth:latest
+	docker push registry.ng.bluemix.net/wasperf/booking:latest
+	docker push registry.ng.bluemix.net/wasperf/customer:latest
+	docker push registry.ng.bluemix.net/wasperf/flight:latest
 
 * Deploy the Container Image with following command (use Service Discovery - SD - auth_token and URL retrieved from prerequisite):
 
 	cf ic run -e CCS_BIND_APP=<Mongo Bridge App Name> -e SERVICE_NAME=<service name> -e SD_URL=<SD URL> -e SD_TOKEN=<auth_token> --name <container name> <image name>
 
 	Examples:
-	cf ic run -e SERVICE_NAME=main -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name main_node_1 registry.ng.bluemix.net/strong/acmeair_node_mainservice
-	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name auth_node_1 registry.ng.bluemix.net/wasperf/acmeair_node_authservice
-	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name booking_node_1 registry.ng.bluemix.net/wasperf/acmeair_node_bookingservice
-	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name customer_node_1 registry.ng.bluemix.net/wasperf/acmeair_node_customerservice
-	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name flight_node_1 registry.ng.bluemix.net/wasperf/acmeair_node_flightservice
+	cf ic run -e SERVICE_NAME=main -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name auth_1 registry.ng.bluemix.net/strong/main
+	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name auth_1 registry.ng.bluemix.net/strong/auth
+	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name auth_1 registry.ng.bluemix.net/strong/booking
+	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name auth_1 registry.ng.bluemix.net/strong/customer
+	cf ic run -e CCS_BIND_APP=MongoBridge -e SERVICE_NAME=auth -e SD_URL=https://servicediscovery.ng.bluemix.net -e SD_TOKEN=1m3rliolucbampleoq36am82bdfv0othuruoefe6enop27ab7cnp --name auth_1 registry.ng.bluemix.net/strong/flight
 
 NOTE: These service name MUST be used (hardcoded in the app to recognize each unique services):
 
@@ -135,22 +129,3 @@ Debugging:
 	Go to each container services log to see if there is heartbeat recorded and StatusCode is 200:
 
 	e.g. {"log":"HEARTBEAT RESPONSE : {\"statusCode\":200,\.....}
-	
-#### Keepalive Performance Improvement
-* Logon to the Service ProxyTenant: 
-
-	cf ic exec -it ServiceProxyTenant bash
-	cd /etc/nginx
-	vi nginx.conf
-* Add the following to each upstream section:
-
-	keepalive 30;
-
-* Add the following to each location section:
-
-	proxy_http_version 1.1;
-	proxy_set_header Connection ""; 
-* Reload nginx
-
-	nginx -s reload
-* You will have to update this if any services are added or subtracted.
