@@ -66,7 +66,7 @@ app.use(bodyParser.text({ type: 'text/html' }));
 app.use(methodOverride());                  			// simulate DELETE and PUT
 app.use(cookieParser());                  				// parse cookie
 
-var websocket = new require('./websocket/index.js')();
+var websocket = new require('./websocketservice/index.js')();
 
 // connect to websocket (may be a better way?)
 app.ws(settings.supportContextRoot + '/supportrequest', function(ws, req) {

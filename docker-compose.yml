@@ -23,16 +23,12 @@ main_service_node1:
   build: .
   dockerfile: Dockerfile_main
   net: ${NETWORK}
-  volumes:
-    - "./:/src/"
 
 auth_service_node1:
   container_name: auth_service_node1
   build: .
   dockerfile: Dockerfile_as
   net: ${NETWORK}
-  volumes:
-    - "./:/src/"
   volumes_from:
     - session_db
 
@@ -41,8 +37,6 @@ booking_service_node1:
   build: .
   dockerfile: Dockerfile_bs
   net: ${NETWORK}
-  volumes:
-    - "./:/src/"
   volumes_from:
     - booking_db
 
@@ -51,8 +45,6 @@ customer_service_node1:
   build: .
   dockerfile: Dockerfile_cs
   net: ${NETWORK}
-  volumes:
-    - "./:/src/"
   volumes_from:
     - customer_db
 
@@ -61,18 +53,14 @@ flight_service_node1:
   build: .
   dockerfile: Dockerfile_fs
   net: ${NETWORK}
-  volumes:
-    - "./:/src/"
   volumes_from:
     - flight_db
     
-support_service_node1:
-  container_name: support_service_node1
-  build: .
-  dockerfile: Dockerfile_ss
-  net: ${NETWORK}
-  volumes:
-    - "./:/src/"
+#support_service_node1:
+#  container_name: support_service_node1
+#  build: .
+#  dockerfile: Dockerfile_ss
+#  net: ${NETWORK}
     
 nginx:
   container_name: nginx
@@ -89,4 +77,4 @@ nginx:
     - booking_service_node1
     - customer_service_node1
     - flight_service_node1
-    - support_service_node1
+ #   - support_service_node1
