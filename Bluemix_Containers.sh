@@ -17,7 +17,7 @@ docker push ${REGISTRY}/${NAME_SPACE}/acmeair_node_bookingservice
 docker push ${REGISTRY}/${NAME_SPACE}/acmeair_node_customerservice
 docker push ${REGISTRY}/${NAME_SPACE}/acmeair_node_flightservice
 
-cf ic run -e SERVICE_NAME=main -e SD_URL=${SD_URL} -e SD_TOKEN=${SD_TOKEN} --name main_1 ${REGISTRY}/${NAME_SPACE}/acmeair_node_mainservice
+cf ic run -p 80 -e SERVICE_NAME=main -e SD_URL=${SD_URL} -e SD_TOKEN=${SD_TOKEN} --name main_1 ${REGISTRY}/${NAME_SPACE}/acmeair_node_mainservice
 cf ic run -e CCS_BIND_APP=${MONGO_BRIDGE} -e SERVICE_NAME=auth     -e SD_URL=${SD_URL} -e SD_TOKEN=${SD_TOKEN} --name auth_1     ${REGISTRY}/${NAME_SPACE}/acmeair_node_authservice
 cf ic run -e CCS_BIND_APP=${MONGO_BRIDGE} -e SERVICE_NAME=booking  -e SD_URL=${SD_URL} -e SD_TOKEN=${SD_TOKEN} --name booking_1  ${REGISTRY}/${NAME_SPACE}/acmeair_node_bookingservice
 cf ic run -e CCS_BIND_APP=${MONGO_BRIDGE} -e SERVICE_NAME=customer -e SD_URL=${SD_URL} -e SD_TOKEN=${SD_TOKEN} --name customer_1 ${REGISTRY}/${NAME_SPACE}/acmeair_node_customerservice
