@@ -30,7 +30,7 @@ module.exports = function (settings) {
     var log4js = require('log4js');
     
     log4js.configure('log4js.json', {});
-    var logger = log4js.getLogger('dataaccess/cloudant');
+    var logger = log4js.getLogger('cloudant');
     logger.setLevel(settings.loggerLevel);
 
     module.dbNames = {
@@ -81,8 +81,8 @@ module.exports = function (settings) {
 		    "password":settings.cloudant_password
 		    }
 		}
-		if ( ! dbConfig.hosturl){
-			dbConfig.hosturl = "https://"+dbConfig.username+":"+dbConfig.password+"@"+dbConfig.host+":"+ dbConfig.port;
+		if ( ! dbConfig.url){
+			dbConfig.url = "https://"+dbConfig.username+":"+dbConfig.password+"@"+dbConfig.host+":"+ dbConfig.port;
 	    }
 		logger.info("Cloudant config:"+JSON.stringify(dbConfig));
 		return dbConfig;

@@ -78,6 +78,12 @@
         "maxLogSize": 20480,
         "backups": 3,
         "category": "mongo"
+      },{
+        "type": "file",
+        "filename": "acmeair_cloudant.log",
+        "maxLogSize": 20480,
+        "backups": 3,
+        "category": "cloudant"
       }
   ]
 }
