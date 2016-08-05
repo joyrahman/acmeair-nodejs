@@ -62,28 +62,18 @@ module.exports = function (settings) {
 	function calculateDBConfig(){
 		
 		var dbConfig ;
-		if(process.env.VCAP_SERVICES){
+		if(process.env.dbtype){
+			dbConfig = {
+			    "url":"https://"+settings.cloudant_username+":"+settings.cloudant_password+"@"+settings.cloudant_host+":"+ settings.cloudant_port || 443
+			}
+		}else if(process.env.CLOUDANT_URL){
+			dbConfig = {"url":process.env.CLOUDANT_URL};			
+		}else if(process.env.VCAP_SERVICES){
 			var env = JSON.parse(process.env.VCAP_SERVICES);
 	        logger.info("env: %j",env);
 			var serviceKey = Object.keys(env)[0];
 			dbConfig = env[serviceKey][0]['credentials'];
 		}
-		if ( ! dbConfig ) {
-			if(process.env.CLOUDANT_URL){
-				dbConfig = {"hosturl":process.env.CLOUDANT_URL};
-			}
-		}
-		if ( ! dbConfig ) {
-			dbConfig = {
-		    "host":settings.cloudant_host,
-		    "port": settings.cloudant_port || 443,
-		    "username":settings.cloudant_username,
-		    "password":settings.cloudant_password
-		    }
-		}
-		if ( ! dbConfig.url){
-			dbConfig.url = "https://"+dbConfig.username+":"+dbConfig.password+"@"+dbConfig.host+":"+ dbConfig.port;
-	    }
 		logger.info("Cloudant config:"+JSON.stringify(dbConfig));
 		return dbConfig;
 	}

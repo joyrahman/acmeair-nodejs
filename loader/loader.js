@@ -32,7 +32,7 @@ module.exports = function (loadUtil,settings) {
 	var DATABASE_PARALLELISM = 5;
 
 	var d = new Date(); // Today!
-	d.setDate(d.getDate() - 1); // Yesterday!
+	d.setDate(d.getDate() - 2); // Yesterday!
 	var nowAtMidnight = getDateAtTwelveAM(d);
 
 	var customerTemplate = {
