@@ -26,7 +26,8 @@
     "request": "^2.72.0",
     "ws":"^1.0.0",
 	"debug": "^2.0.0",
-	"nano" : "^6.2.0",
+    "agentkeepalive": "^2.2.0",
+    "cloudant": "^1.4.3",
     "watson-developer-cloud": "^1.0.0"
   }
 }

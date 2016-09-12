@@ -103,6 +103,61 @@ module.exports = function (isMonolithic, monoDataaccess, proxyUrl, dbtype, setti
 		});
 	};
 
+	var payload;
+	function extend(target) {
+	    var sources = [].slice.call(arguments, 1);
+	    sources.forEach(function (source) {
+	        for (var prop in source) {
+	            target[prop] = source[prop];
+	        }
+	    });
+	    return target;
+	}
+	
+	if(settings.payload){
+		var fs = require('fs');
+		var path = require('path');
+		var filePath = path.join(__dirname, "/../../" + settings.payload);
+		logger.debug('Payload Path : ' + __dirname + '/../../' + settings.payload);
+		
+		fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
+		    if (!err){
+		    	payload = JSON.parse(data.toString());
+		    }
+		    else {
+				logger.debug("Problem reading payload file");
+		    }
+		});
+	}
+
+	
+	module.bookflightsWithPayload = function(req, res) {
+		logger.debug('booking flights');
+		
+		var userid = req.body.userid;
+		var toFlight = req.body.toFlightId;
+		var retFlight = req.body.retFlightId;
+		var oneWay = (req.body.oneWayFlight == 'true');
+		
+		logger.debug("toFlight:"+toFlight+",retFlight:"+retFlight);
+		
+		bookFlight(toFlight, userid, function (error, toBookingId) {
+			if (!oneWay) {
+				bookFlight(retFlight, userid, function (error, retBookingId) {
+					var bookingInfo = {"oneWay":false,"returnBookingId":retBookingId,"departBookingId":toBookingId};
+					res.header('Cache-Control', 'no-cache');
+					res.send(extend({}, bookingInfo,payload));
+				});
+			}
+			else {
+				var bookingInfo = {"oneWay":true,"departBookingId":toBookingId};
+				res.header('Cache-Control', 'no-cache');
+				res.send(extend({}, bookingInfo,payload));
+			}
+		});
+	};
+
+	
 	module.cancelBooking = function(req, res) {
 				
 		var number = req.body.number;

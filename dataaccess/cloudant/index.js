@@ -43,8 +43,19 @@ module.exports = function (settings) {
     }
 
     var dbConfig = calculateDBConfig();
-    var nano = require('nano')(dbConfig.url); // may need to set the connection pool here.
+    
+    var HttpsAgent = require('agentkeepalive').HttpsAgent;
+    var myagent = new HttpsAgent({
+      maxSockets: 200, 
+      maxKeepAliveRequests: 0,
+      maxKeepAliveTime: 300000
+    });
 
+
+    var nano = require('cloudant')({ 
+        url: dbConfig.url, 
+        "requestDefaults": { "agent" : myagent }
+      });
     // TODO does cache the db by dbName improve performance?
     var nanoDBs = {};
     nanoDBs[module.dbNames.airportCodeMappingName]=nano.db.use(module.dbNames.airportCodeMappingName);

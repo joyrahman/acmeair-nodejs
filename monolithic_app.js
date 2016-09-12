@@ -115,7 +115,11 @@ function initDB(){
 
         	// flight service
         	router.post('/flights/queryflights', authRoutes.checkForValidSessionCookie, flightRoutes.queryflights);
-        	router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflights);
+        	if(settings.payload){
+            	router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflightsWithPayload);
+        	}else {
+            	router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflights);
+        	}
         	router.post('/bookings/cancelbooking', authRoutes.checkForValidSessionCookie, bookingRoutes.cancelBooking);
         	router.get('/bookings/byuser/:user', authRoutes.checkForValidSessionCookie, bookingRoutes.bookingsByUser);
 
