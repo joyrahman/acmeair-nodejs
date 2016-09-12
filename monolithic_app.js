@@ -117,6 +117,7 @@ function initDB(){
         	router.post('/flights/queryflights', authRoutes.checkForValidSessionCookie, flightRoutes.queryflights);
         	if(settings.payload){
             	router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflightsWithPayload);
+            	router.post('/bookings/payload', authRoutes.checkForValidSessionCookie, bookingRoutes.loadPayload);
         	}else {
             	router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflights);
         	}

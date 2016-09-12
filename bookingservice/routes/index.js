@@ -115,17 +115,36 @@ module.exports = function (isMonolithic, monoDataaccess, proxyUrl, dbtype, setti
 	}
 	
 	if(settings.payload){
+		loadPayload(settings.payload, function (error, content) {
+			logger.debug("Payload content : " + content);	
+		});
+	}
+
+	module.loadPayload = function(req, res) {
+		var payloadName = req.body.payload;
+		var debug = require('debug')('payload');
+		debug('Loading Payload : ' + payloadName);
+		loadPayload(payloadName, function (error, content) {
+			res.send(content);	
+		});
+	}
+	
+	function loadPayload(payloadName, callback){
 		var fs = require('fs');
 		var path = require('path');
-		var filePath = path.join(__dirname, "/../../" + settings.payload);
-		logger.debug('Payload Path : ' + __dirname + '/../../' + settings.payload);
+		var filePath = path.join(__dirname, "/../../" + payloadName);
+		logger.debug('Payload Path : ' + __dirname + '/../../' + payloadName);
 		
 		fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
 		    if (!err){
 		    	payload = JSON.parse(data.toString());
+		    	logger.info("Payload file : " + payloadName + " is loaded.");
+		    	logger.debug("Payload content in function : " + payload);
+		    	callback(null, payload);
 		    }
 		    else {
 				logger.debug("Problem reading payload file");
+				callback ("Problem reading payload file", null);
 		    }
 		});
 	}
