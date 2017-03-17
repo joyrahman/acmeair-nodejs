@@ -20,13 +20,8 @@ module.exports = function (dataaccess, dbtype, settings) {
 	var uuid = require('node-uuid');
 	var log4js = require('log4js');
 
-	/*	var http = require('http')
-	var flightCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
-	var flightSegmentCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});
-	var flightDataCacheTTL = settings.flightDataCacheTTL == -1 ? null : settings.flightDataCacheTTL; 
-	 */	
-
-	//initialize for Watson services
+	/**
+	 * initialize for Watson services
 	var vcapUrl = null;
 	var vcapUsername = null;
 	var vcapPassword = null;
@@ -42,12 +37,12 @@ module.exports = function (dataaccess, dbtype, settings) {
 			}
 		}
 	}
+	*/
 
 	//logging configurations
 	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('main_app');
 	logger.setLevel(settings.loggerLevel);
-
 
 	module.dbNames = dataaccess.dbNames
 
@@ -58,6 +53,10 @@ module.exports = function (dataaccess, dbtype, settings) {
 	module.initialize = function (callback) {
 		dataaccess.initialize(callback);
 	};
+	
+	module.closeDBConnection = function(callback){
+		dataaccess.closeConnection(callback);
+	}
 
 	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
 		dataaccess.insertOne(collectionname, doc, callback)

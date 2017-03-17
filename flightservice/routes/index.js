@@ -16,7 +16,6 @@
 
 module.exports = function (dataaccess, dbtype, settings) {
 	var module = {};
-	var uuid = require('node-uuid');
 	var log4js = require('log4js');
 	var debug = require('debug')('flight');
 	var flightCache = require('ttl-lru-cache')({maxLength:settings.flightDataCacheMaxSize});

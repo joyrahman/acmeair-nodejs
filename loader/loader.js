@@ -149,6 +149,17 @@ module.exports = function (loadUtil,settings) {
 					logger.info('all flights loaded');
 					logger.info('ending loading database');
 					res.send('Database Finished Loading');
+					loadUtil.closeDBConnection(function(err){
+						if (!err){
+							loadUtil.initializeDatabaseConnections(function(err){
+								if(err){
+									logger.info('Error initalizing database : ' + err);
+								}
+							});
+						}else{
+							logger.info('Error iclosing database : ' + err);
+						}
+					});
 				};
 				customerQueue.push(customers);
 			});

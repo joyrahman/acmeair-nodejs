@@ -16,7 +16,6 @@
 
 module.exports = function (dataaccess, dbtype, settings) {
 	var module = {};
-	var uuid = require('node-uuid');
 	var log4js = require('log4js');
 
 	log4js.configure('log4js.json', {});
@@ -39,60 +38,6 @@ module.exports = function (dataaccess, dbtype, settings) {
 	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
 		dataaccess.removeAll(collectionname, callback)
 	};
-
-
-	module.checkForValidSessionCookie = function(req, res, next) {
-		logger.debug('checkForValidCookie');
-		var sessionid = req.cookies.sessionid;
-		if (sessionid) {
-			sessiondid = sessionid.trim();
-		}
-		if (!sessionid || sessionid == '') {
-			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
-			res.sendStatus(403);
-			return;
-		}
-
-		validateSession(sessionid, function(err, customerid) {
-			if (err) {
-				logger.debug('checkForValidCookie - system error validating session so returning 500');
-				res.sendStatus(500);
-				return;
-			}
-
-			if (customerid) {
-				logger.debug('checkForValidCookie - good session so allowing next route handler to be called');
-				req.acmeair_login_user = customerid;
-				next();
-				return;
-			}
-			else {
-				logger.debug('checkForValidCookie - bad session so returning 403');
-				res.sendStatus(403);
-				return;
-			}
-		});
-	}
-
-	function validateSession(sessionId, callback /* (error, userid) */) {
-
-		var now = new Date();
-
-		dataaccess.findOne(module.dbNames.customerSessionName, sessionId, function(err, session) {
-			if (err) callback (err, null);
-			else{
-				if (now > session.timeoutTime) {
-					daraaccess.remove(module.dbNames.customerSessionName,{'_id':sessionId}, function(error) {
-						if (error) callback (error, null);
-						else callback(null, null);
-					});
-				}
-				else
-					callback(null, session.customerid);
-			}
-		});
-
-	}
 
 	module.getCustomerById = function(req, res) {
 		logger.debug('getting customer by user ' + req.params.user);

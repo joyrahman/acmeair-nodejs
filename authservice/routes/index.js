@@ -172,7 +172,6 @@ module.exports = function (dataaccess, dbtype, settings) {
 		dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) ;
 	}
 
-	//Monolithic specific function
 	module.checkForValidSessionCookie = function(req, res, next) {
 		logger.debug('checkForValidCookie');
 		var sessionid = req.cookies.sessionid;

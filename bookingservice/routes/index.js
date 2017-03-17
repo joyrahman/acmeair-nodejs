@@ -167,39 +167,6 @@ module.exports = function (dataaccess, dbtype, settings) {
 		});
 	};
 
-	module.checkForValidSessionCookie = function(req, res, next) {
-		logger.debug('checkForValidCookie');
-		var sessionid = req.cookies.sessionid;
-		if (sessionid) {
-			sessiondid = sessionid.trim();
-		}
-		if (!sessionid || sessionid == '') {
-			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
-			res.sendStatus(403);
-			return;
-		}
-
-		validateSession(sessionid, function(err, customerid) {
-			if (err) {
-				logger.debug('checkForValidCookie - system error validating session so returning 500');
-				res.sendStatus(500);
-				return;
-			}
-
-			if (customerid) {
-				logger.debug('checkForValidCookie - good session so allowing next route handler to be called');
-				req.acmeair_login_user = customerid;
-				next();
-				return;
-			}
-			else {
-				logger.debug('checkForValidCookie - bad session so returning 403');
-				res.sendStatus(403);
-				return;
-			}
-		});
-	}
-
 	module.countBookings = function(req,res) {
 		countItems(module.dbNames.bookingName, function (error,count){
 			if (error){
@@ -220,26 +187,6 @@ module.exports = function (dataaccess, dbtype, settings) {
 			}
 		});
 	};
-
-	function validateSession(sessionId, callback /* (error, userid) */) {
-
-		var now = new Date();
-
-		dataaccess.findOne(module.dbNames.customerSessionName, sessionId, function(err, session) {
-			if (err) callback (err, null);
-			else{
-				if (now > session.timeoutTime) {
-					daraaccess.remove(module.dbNames.customerSessionName,{'_id':sessionId}, function(error) {
-						if (error) callback (error, null);
-						else callback(null, null);
-					});
-				}
-				else
-					callback(null, session.customerid);
-			}
-		});
-
-	}
 
 	function getBookingsByUser(username, callback /* (error, Bookings) */) {
 		dataaccess.findBy(module.dbNames.bookingName, {'customerId':username},callback)

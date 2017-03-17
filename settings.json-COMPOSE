@@ -3,11 +3,11 @@
 	"contextRoot": "/rest/api",	
 
 	"mongoDatabaseName" : "acmeair",
-	"mongoHost" : "127.0.0.1",
-	"mongoPort" : 27017,
+	"mongoHost" : "sl-us-dal-9-portal.1.dblayer.com",
+	"mongoPort" : 10774,
 	"mongoConnectionPoolSize": 10,
-	"mongoUsername": "",
-	"mongoPassword": "",
+	"mongoUsername": "mongo",
+	"mongoPassword": "perf01",
 
 	"useFlightDataRelatedCaching" : true,
 	

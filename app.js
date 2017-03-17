@@ -25,29 +25,16 @@ var logger = log4js.getLogger('monolithic');
 logger.setLevel(settings.loggerLevel);
 log4js.configure('log4js.json', {});
 
-//disable process.env.PORT for now as it cause problem on mesos slave
-var port = (process.env.VMC_APP_PORT || process.env.VCAP_APP_PORT || settings.port);
+console.log(process.env);
 
+var port = (process.env.PORT || process.env.VCAP_APP_PORT || settings.port);
 var dbtype = process.env.dbtype || "mongo";
-
-//Calculate the backend datastore type if run inside BLuemix or cloud foundry
-if(process.env.VCAP_SERVICES){
-	var env = JSON.parse(process.env.VCAP_SERVICES);
-	logger.info("env: %j",env);
-	var serviceKey = Object.keys(env)[0];
-	if (serviceKey && serviceKey.indexOf('cloudant')>-1)
-		dbtype="cloudant";
-	else if (serviceKey && serviceKey.indexOf('redis')>-1)
-		dbtype="redis";
-}
 logger.info("db type=="+dbtype);
 
 var daModuleName = "./dataaccess/"+dbtype+"/index.js";
 logger.info("Use dataaccess:"+daModuleName);
 debug("Use dataaccess:", daModuleName);
 var dataaccess = new require(daModuleName)(settings);
-
-dbNames = dataaccess.dbNames
 
 var app = express();
 var morgan         = require('morgan');
@@ -82,7 +69,6 @@ function initDB(){
 				var bookingRoutes = new require('./bookingservice/routes/index.js')(dataaccess,dbtype,settings); 
 				var customerRoutes = new require('./customerservice/routes/index.js')(dataaccess,dbtype,settings); 
 				var flightRoutes = new require('./flightservice/routes/index.js')(dataaccess,dbtype,settings); 
-//				var supportRoutes = new require('./supportservice/routes/index.js')(flightRoutes,dbtype,settings); 
 				routes = new require('./main/routes/index.js')(dataaccess,dbtype, settings);
 				loader = new require('./loader/loader.js')(routes, settings);
 
@@ -137,7 +123,8 @@ function initDB(){
 				//default
 				router.get('/checkstatus', checkStatus);
 
-				//Set SUPPORT_SERVICE environment variable = true to use this service
+				/* To add support service, comment out the following, then write the code in /supportservice/routes/index.js
+				var supportRoutes = new require('./supportservice/routes/index.js')(flightRoutes,dbtype,settings); 
 				if (process.env.SUPPORT_SERVICE){
 
 					//for REST API watson dialog service
@@ -153,16 +140,15 @@ function initDB(){
 
 					var websocket = new require('./websocketservice/index.js')(flightRoutes, settings);
 					debug("websocketPort", settings.websocketPort );
-					/*NOTE: Websocket must have its own port number. It cannot run in Cloud Foundry because 
-					 *Current code conflicts the port number with HTTP & chat will not function.
-					 */
+					
+					//NOTE: Websocket must have its own port number. It cannot run in Cloud Foundry because Current code conflicts the port number with HTTP & chat will not function.
+					
 					var wss = new ws({port:(process.env.VCAP_APP_PORT || settings.websocketPort)});
 					wss.on('connection', websocket.chat);
 				}
-
-				//REGISTER OUR ROUTES so that all of routes will have prefix 
+				*/
+ 
 				app.use(settings.contextRoot, router);
-
 			}
 		});
 	}, SLEEP_TIME);
