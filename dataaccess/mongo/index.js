@@ -50,37 +50,38 @@ module.exports = function (settings) {
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		var mongo = null;
 		var mongoExists = false;
+		var mongourl = null;
 
 		//This section extracts Connection String to Compose Mongo DB
 		if(process.env.VCAP_SERVICES){
 			var env = JSON.parse(process.env.VCAP_SERVICES);
 			var serviceKeys = Object.keys(env);
 			serviceKeys.forEach(function(value){
-				  debug('service key',value);
-					if (value == 'compose-for-mongodb'){
-						  if(mongoExists){
-							  console.log('There are more than 1 Mongo DB Service connected to this instance.  Please check the Services.  For now, it will connect to the last Mongo DB Service that is detected ');
-						  }
-						temp = env[value][0]['credentials']['uri'];                 
+				debug('service key',value);
+				if (value == 'compose-for-mongodb'){
+					if(mongoExists){
+						console.log('There are more than 1 Mongo DB Service connected to this instance.  Please check the Services.  For now, it will connect to the last Mongo DB Service that is detected ');
+					}
+					temp = env[value][0]['credentials']['uri'];                 
+					if (temp.startsWith('mongodb://')){
+						mongourl = temp;
+						debug("mongo: %j",mongo);
+						mongoExists = true;
+					}
+				}else if(value == 'user-provided'){
+					if(env[value][0]['credentials'].hasOwnProperty('url')){
+						temp = env[value][0]['credentials']['url'];
 						if (temp.startsWith('mongodb://')){
-							mongo = temp;
+							if(mongoExists){
+								console.log('There are more than 1 Mongo DB Service connected to this instance.  Please check the Services.  For now, it will connect to the last Mongo DB Service that is detected ');
+							}
+							mongourl = temp;
 							debug("mongo: %j",mongo);
 							mongoExists = true;
 						}
-					}else if(value == 'user-provided'){
-						if(env[value][0]['credentials'].hasOwnProperty('url')){
-							temp = env[value][0]['credentials']['url'];
-							if (temp.startsWith('mongodb://')){
-								  if(mongoExists){
-									  console.log('There are more than 1 Mongo DB Service connected to this instance.  Please check the Services.  For now, it will connect to the last Mongo DB Service that is detected ');
-								  }
-								mongo = temp;
-								debug("mongo: %j",mongo);
-								mongoExists = true;
-							}
-						}
 					}
-				});
+				}
+			});
 		}
 
 		// The section is for docker integration using link
@@ -115,9 +116,6 @@ module.exports = function (settings) {
 				logger.info("mongo: %j",process.env.MONGO_URL);
 				return process.env.MONGO_URL;
 			}
-			if (obj.startsWith('mongodb://')){
-				return obj;
-			}
 			obj.hostname = (obj.hostname || 'localhost');
 			obj.port = (obj.port || 27017);
 			obj.db = (obj.db || dbName);
@@ -130,8 +128,9 @@ module.exports = function (settings) {
 			}
 		}
 
-		var mongourl = generate_mongo_url(mongo);
-
+		if(mongourl == null){
+			mongourl = generate_mongo_url(mongo);
+		}
 
 		var c_opt = {autoReconnect:true,poolSize: settings.mongoConnectionPoolSize};
 		mongoClient.connect(mongourl, c_opt, function(err, conn){
@@ -139,31 +138,31 @@ module.exports = function (settings) {
 				callback(err);
 			}else {
 				dbclient=conn;
-					dbclient.collection(module.dbNames.bookingName).createIndex({customerId:1}
-					, {background:true}, function(err, indexName) {
-						logger.info("createIndex:"+err+":"+indexName);
-					});
-					dbclient.collection(module.dbNames.flightName).createIndex({flightSegmentId:1,scheduledDepartureTime:2}
-					, {background:true}, function(err, indexName) {
-						logger.info("createIndex:"+err+":"+indexName);
-					});
-					dbclient.collection(module.dbNames.flightSegmentName).createIndex({originPort:1,destPort:2}
-					, {background:true}, function(err, indexName) {
-						logger.info("createIndex:"+err+":"+indexName);
-					});
+				dbclient.collection(module.dbNames.bookingName).createIndex({customerId:1}
+				, {background:true}, function(err, indexName) {
+					logger.info("createIndex:"+err+":"+indexName);
+				});
+				dbclient.collection(module.dbNames.flightName).createIndex({flightSegmentId:1,scheduledDepartureTime:2}
+				, {background:true}, function(err, indexName) {
+					logger.info("createIndex:"+err+":"+indexName);
+				});
+				dbclient.collection(module.dbNames.flightSegmentName).createIndex({originPort:1,destPort:2}
+				, {background:true}, function(err, indexName) {
+					logger.info("createIndex:"+err+":"+indexName);
+				});
 				callback(null);
 			}
 		});
 	}
-	
+
 	module.closeConnection = function(callback){
 		dbclient.close(false, function(error, result) {
-		  if (error){
-			  logger.error("DB close error:"+error);
+			if (error){
+				logger.error("DB close error:"+error);
 				callback(error);
-		  }else{
-			  callback();
-		  }
+			}else{
+				callback();
+			}
 		});
 	}
 

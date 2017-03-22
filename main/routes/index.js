@@ -17,7 +17,7 @@
 module.exports = function (dataaccess, dbtype, settings) {
 	var module = {};
 	var debug = require('debug')('routes');
-	var uuid = require('node-uuid');
+	var uuid = require('uuid');
 	var log4js = require('log4js');
 
 	/**

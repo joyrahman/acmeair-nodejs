@@ -19,9 +19,9 @@ Environment variable dbtype is used to determine the datastore choice. MongoDB i
  
 ### Application Run Platforms
 
-* [Bluemix Cloud Foundry Instructions] (README_Bluemix.md)
-* [Docker Instructions] (README_Docker.md)
-* [Bluemix Container Service Instructions] (README_Bluemix_Container.md)
+* [Bluemix Cloud Foundry Instructions](README_Bluemix.md)
+* [Docker Instructions](README_Docker.md)
+* [Bluemix Container Service Instructions](README_Bluemix_Container.md)
 
 
 ## How to get started
@@ -34,12 +34,13 @@ Assume MongoDB started on 127.0.0.1:27017
 	node_modules/.bin/npm install 
 
 ### Run Acmeair in Monolithic on Local
+Change "port" in settings.json from 80 to 9080
 
-	node monolithic_app.js
+	node app.js
 	
 ### Access Monolithic Application 
 
-	http://localhost:9085/acmeair-monolithic	
+	http://localhost:9080
 
 ## More on Configurations
 
@@ -47,8 +48,8 @@ Assume MongoDB started on 127.0.0.1:27017
 
 Name | Default | Meaning
 --- | --- | ---
-dbtype | mongo | You can switch between mongo,cloudant,cassandra for datastore choices. When running on Bluemix, dbtype is automactially discovered from the service the application is bound to.
-MONGO_URL||Mongo database URL. Take precedence over other settings
+dbtype | mongo | You can switch datastore choices.
+MONGO_URL||Mongo database URL. Take precedence after Mongo DB Services, over other settings
 
 ### Configuration for Runtime
 
