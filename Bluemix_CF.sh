@@ -1,1 +1,1 @@
-cf push acmeair-node -m 256M
+cf push acmeair-node --no-start -m 256M

@@ -20,7 +20,6 @@ Environment variable dbtype is used to determine the datastore choice. MongoDB i
 ### Application Run Platforms
 
 * [Bluemix Cloud Foundry Instructions](README_Bluemix.md)
-* [Docker Instructions](README_Docker.md)
 * [Bluemix Container Service Instructions](README_Bluemix_Container.md)
 
 

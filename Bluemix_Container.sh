@@ -1,7 +1,7 @@
 cd ..
 REGISTRY=registry.ng.bluemix.net
-NAME_SPACE=strong
-MONGO_BRIDGE=MongoBridgeMoss
+NAME_SPACE=
+MONGO_BRIDGE=
 
 if ! [[ $1 == group ]]
 then
