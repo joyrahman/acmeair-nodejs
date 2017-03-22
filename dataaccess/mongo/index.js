@@ -38,11 +38,9 @@ module.exports = function (settings) {
 
 	module.dbNames = {
 			customerName: "customer",
-			flightName:"flight",
-			flightSegmentName:"flightSegment",
+			flightName:"flightsnosql",
 			bookingName:"booking",
-			customerSessionName:"customerSession",
-			airportCodeMappingName:"airportCodeMapping"
+			customerSessionName:"customerSession"
 	}
 
 	var dbclient = null;
@@ -146,10 +144,9 @@ module.exports = function (settings) {
 				, {background:true}, function(err, indexName) {
 					logger.info("createIndex:"+err+":"+indexName);
 				});
-				dbclient.collection(module.dbNames.flightSegmentName).createIndex({originPort:1,destPort:2}
-				, {background:true}, function(err, indexName) {
-					logger.info("createIndex:"+err+":"+indexName);
-				});
+				dbclient.createIndex(collectionName, {originPort:1}, {background:true}, function(err, indexName) {
+           		 logger.info("createIndex:"+err+":"+indexName);
+           	 });
 				callback(null);
 			}
 		});

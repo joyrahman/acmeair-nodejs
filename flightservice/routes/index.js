@@ -43,6 +43,9 @@ module.exports = function (dataaccess, dbtype, settings) {
 		dataaccess.removeAll(collectionname, callback)
 	};
 
+	module.initialize = function (callback /* (error, insertedDocument) */) {
+		dataaccess.initialize(callback)
+	};
 	module.queryflights = function(req, res) {
 		var fromAirport = req.body.fromAirport;
 		var toAirport = req.body.toAirport;
@@ -58,42 +61,44 @@ module.exports = function (dataaccess, dbtype, settings) {
 	module.searchFlights = function (fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
 		searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback);
 	}
+
 	function searchFlights(fromAirport, toAirport, oneWay, fromDateWeb, returnDateWeb, callback) {
 		logger.debug('querying flights');
-
+		debug('querying flights');
+		
 		//If your acmeair is in another time zone (e.g. Your browser is in EST & Acmeair server is in CST), fromDate will be 1 day behind than fromDateWeb & won't query 
 		var fromDate = new Date(fromDateWeb.getFullYear(), fromDateWeb.getMonth(), fromDateWeb.getDate()); // convert date to local timezone
 		var returnDate;
+		//if (oneWay=='false') { // this needs to be changed like this. currently, oneWay is string instead of boolean
 		if (!oneWay) {
 			returnDate = new Date(returnDateWeb.getFullYear(), returnDateWeb.getMonth(), returnDateWeb.getDate()); // convert date to local timezone
 		}
-		getFlightByAirportsAndDepartureDate(fromAirport, toAirport, fromDate, function (error, flightSegmentOutbound, flightsOutbound) {
-			logger.debug('flightsOutbound = ' + flightsOutbound);
-			if (flightsOutbound) {
-				for (ii = 0; ii < flightsOutbound.length; ii++) {
-					flightsOutbound[ii].flightSegment = flightSegmentOutbound;
-				}
+		dataaccess.findOne({"originPort" : fromAirport, "destPort" : toAirport, "scheduledDepartureTime" : fromDate}, function(err, outboundData){
+			debug('Outbound : ' + JSON.stringify(outboundData))
+			
+			//Match behavior with old code, add flights into array
+			flightsOutbound = [];
+			if(outboundData !== null){
+				flightsOutbound.push(outboundData);
 			}
-			else {
-				flightsOutbound = [];
-			}
+			
+			//if (oneWay=='false') { // this needs to be changed like this. currently, oneWay is string instead of boolean
 			if (!oneWay) {
-				getFlightByAirportsAndDepartureDate(toAirport, fromAirport, returnDate, function (error, flightSegmentReturn, flightsReturn) {
-					logger.debug('flightsReturn = ' + JSON.stringify(flightsReturn));
-					if (flightsReturn) {
-						for (ii = 0; ii < flightsReturn.length; ii++) {
-							flightsReturn[ii].flightSegment = flightSegmentReturn;
-						}
+				dataaccess.findOne({"originPort" : toAirport, "destPort" : fromAirport, "scheduledDepartureTime" : returnDate}, function(err, inboundData){
+					debug('Inbound : ' + JSON.stringify(inboundData))
+					
+					//Match behavior with old code, add flights into array
+					flightsReturn = [];
+					if (inboundData !== null){
+						flightsReturn.push(inboundData);
 					}
-					else {
-						flightsReturn = [];
-					}
+					
 					var options = {"tripFlights":
 						[
 						 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10},
 						 {"numPages":1,"flightsOptions": flightsReturn,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
-						 ], "tripLegs":2};
-
+						], "tripLegs":2};
+					
 					debug('options', options);
 					callback(options);
 				});
@@ -102,33 +107,14 @@ module.exports = function (dataaccess, dbtype, settings) {
 				var options = {"tripFlights":
 					[
 					 {"numPages":1,"flightsOptions": flightsOutbound,"currentPage":0,"hasMoreOptions":false,"pageSize":10}
-					 ], "tripLegs":1};
+					], "tripLegs":1};
 				callback(options);
 			}
 		});
 	};	
+	
 	module.countFlights = function(req,res) {
 		countItems(module.dbNames.flightName, function (error,count){
-			if (error){
-				res.send("-1");
-			} else {
-				res.send(count.toString());
-			}
-		});
-	};
-
-	module.countFlightSegments = function(req,res) {
-		countItems(module.dbNames.flightSegmentName, function (error,count){
-			if (error){
-				res.send("-1");
-			} else {
-				res.send(count.toString());
-			}
-		});
-	};
-
-	module.countAirports = function(req,res) {
-		countItems(module.dbNames.airportCodeMappingName, function (error,count){
 			if (error){
 				res.send("-1");
 			} else {
@@ -147,86 +133,6 @@ module.exports = function (dataaccess, dbtype, settings) {
 			}
 		});
 	};
-
-
-	function getFlightByAirportsAndDepartureDate(fromAirport, toAirport, flightDate, callback /* error, flightSegment, flights[] */) {
-		logger.debug("getFlightByAirportsAndDepartureDate " + fromAirport + " " + toAirport + " " + flightDate);
-
-		getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, function(error, flightsegment) {
-			if (error) {
-				logger.error("Hit error:"+error);
-				throw error;
-			}
-
-			logger.debug("flightsegment = " + JSON.stringify(flightsegment));
-			if (!flightsegment) {
-				callback(null, null, null);
-				return;
-			}
-
-			var date = new Date(flightDate.getFullYear(), flightDate.getMonth(), flightDate.getDate(),0,0,0,0);
-
-			var cacheKey = flightsegment._id + "-" + date.getTime();
-			if (settings.useFlightDataRelatedCaching) {
-				var flights = flightCache.get(cacheKey);
-				if (flights) {
-					logger.debug("cache hit - flight search, key = " + cacheKey);
-					callback(null, flightsegment, (flights == "NULL" ? null : flights));
-					return;
-				}
-				logger.debug("cache miss - flight search, key = " + cacheKey + " flightCache size = " + flightCache.size());
-			}
-			var searchCriteria = {flightSegmentId: flightsegment._id, scheduledDepartureTime: date};
-			dataaccess.findBy(module.dbNames.flightName, searchCriteria, function(err, docs) {
-				if (err) {
-					logger.error("hit error:"+err);
-					callback (err, null, null);
-				}else
-				{
-					("after cache miss - key = " + cacheKey + ", docs = " + JSON.stringify(docs));
-
-					var docsEmpty = !docs || docs.length == 0;
-
-					if (settings.useFlightDataRelatedCaching) {
-						var cacheValue = (docsEmpty ? "NULL" : docs);
-						("about to populate the cache with flights key = " + cacheKey + " with value of " + JSON.stringify(cacheValue));
-						flightCache.set(cacheKey, cacheValue, flightDataCacheTTL);
-						("after cache populate with key = " + cacheKey + ", flightCacheSize = " + flightCache.size())
-					}
-					callback(null, flightsegment, docs);
-				}
-			});
-		});
-	}
-
-	function getFlightSegmentByOriginPortAndDestPort(fromAirport, toAirport, callback /* error, flightsegment */) {
-		var segment;
-
-		if (settings.useFlightDataRelatedCaching) {
-			segment = flightSegmentCache.get(fromAirport+toAirport);
-			if (segment) {
-				("cache hit - flightsegment search, key = " + fromAirport+toAirport);
-				callback(null, (segment == "NULL" ? null : segment));
-				return;
-			}
-			("cache miss - flightsegment search, key = " + fromAirport+toAirport + ", flightSegmentCache size = " + flightSegmentCache.size());
-		}
-		dataaccess.findBy(module.dbNames.flightSegmentName,{originPort: fromAirport, destPort: toAirport},function(err, docs) {
-			if (err) callback (err, null);
-			else {
-				segment = docs[0];
-				if (segment == undefined) {
-					segment = null;
-				}
-				if (settings.useFlightDataRelatedCaching) {
-					("about to populate the cache with flightsegment key = " + fromAirport+toAirport + " with value of " + JSON.stringify(segment));
-					flightSegmentCache.set(fromAirport+toAirport, (segment == null ? "NULL" : segment), flightDataCacheTTL);
-					("after cache populate with key = " + fromAirport+toAirport + ", flightSegmentCacheSize = " + flightSegmentCache.size())
-				}
-				callback(null, segment);
-			}
-		});
-	}
 
 	return module;
 }
