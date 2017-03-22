@@ -25,6 +25,7 @@
 
 module.exports = function (settings) {
 	var module = {};
+	var debug = require('debug')('mongodb');
 
 	var mongoClient = require('mongodb').MongoClient;
 	var log4js = require('log4js');
@@ -48,16 +49,38 @@ module.exports = function (settings) {
 
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		var mongo = null;
-		var mongoURI = null;
+		var mongoExists = false;
+
+		//This section extracts Connection String to Compose Mongo DB
 		if(process.env.VCAP_SERVICES){
 			var env = JSON.parse(process.env.VCAP_SERVICES);
-			logger.info("env: %j",env);
-			var serviceKey = Object.keys(env)[0];
-			if (serviceKey)
-			{
-				mongo = env[serviceKey][0]['credentials'];                 
-				logger.info("mongo: %j",mongo);
-			}
+			var serviceKeys = Object.keys(env);
+			serviceKeys.forEach(function(value){
+				  debug('service key',value);
+					if (value == 'compose-for-mongodb'){
+						  if(mongoExists){
+							  console.log('There are more than 1 Mongo DB Service connected to this instance.  Please check the Services.  For now, it will connect to the last Mongo DB Service that is detected ');
+						  }
+						temp = env[value][0]['credentials']['uri'];                 
+						if (temp.startsWith('mongodb://')){
+							mongo = temp;
+							debug("mongo: %j",mongo);
+							mongoExists = true;
+						}
+					}else if(value == 'user-provided'){
+						if(env[value][0]['credentials'].hasOwnProperty('url')){
+							temp = env[value][0]['credentials']['url'];
+							if (temp.startsWith('mongodb://')){
+								  if(mongoExists){
+									  console.log('There are more than 1 Mongo DB Service connected to this instance.  Please check the Services.  For now, it will connect to the last Mongo DB Service that is detected ');
+								  }
+								mongo = temp;
+								debug("mongo: %j",mongo);
+								mongoExists = true;
+							}
+						}
+					}
+				});
 		}
 
 		// The section is for docker integration using link
@@ -92,13 +115,8 @@ module.exports = function (settings) {
 				logger.info("mongo: %j",process.env.MONGO_URL);
 				return process.env.MONGO_URL;
 			}
-			if (obj['uri']!=null)
-			{
-				return obj.uri;
-			}
-			if (obj['url']!=null)
-			{
-				return obj.url;
+			if (obj.startsWith('mongodb://')){
+				return obj;
 			}
 			obj.hostname = (obj.hostname || 'localhost');
 			obj.port = (obj.port || 27017);
