@@ -22,6 +22,7 @@ module.exports = function (loadUtil,settings, dbtype) {
 	var uuid = require('uuid');
 	var async = require('async');
 	var fs = require('fs');
+	var debug = require('debug')('loader');
 
 	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('loader');
@@ -135,35 +136,35 @@ module.exports = function (loadUtil,settings, dbtype) {
 		if(numCustomers === undefined) {
 			numCustomers = settings.MAX_CUSTOMERS;
 		}
-		loadUtil.initialize(function() {
+		loadUtil.initialize(function(err) {
+			if (err) {
+				debug(err);
+			} else {
 			logger.info('DB initialized');
 			logger.info('starting loading database');
 			createCustomers(numCustomers, function(){});
 			createFlightRelatedData(function() {
 				logger.info('number of customers = ' + customers.length);
 				logger.info('number of flights = ' + flights.length);
-				flightQueue.drain = function() {
-					logger.info('all flights loaded');
-					logger.info('ending loading database');
-					res.send('Database Finished Loading');
-					loadUtil.closeDBConnection(function(err){
-						if (!err){
-							loadUtil.initializeDatabaseConnections(function(err){
-								if(err){
-									logger.info('Error initalizing database : ' + err);
-								}
-							});
-						}else{
-							logger.info('Error iclosing database : ' + err);
-						}
+				var flightQueue = async.queue(insertFlight, DATABASE_PARALLELISM);
+				createFlightRelatedData(function(dataArray){
+					dataArray.forEach(function(value){
+						debug("Data : ",JSON.stringify(value));		
 					});
-				};
+					flightQueue.push(flights);
+					flightQueue.drain = function() {
+						debug('all flights loaded');
+						res.send('Database Finished Loading');
+					};	
+				});
 				customerQueue.push(customers);
 			});
+			}
 		});
 		//res.send('Trigger DB loading');
 	}
-
+	
+	
 	module.startLoadCustomerDatabase = function startLoadCustomerDatabase(req, res) {
 
 		logger.info("numCustomers: " + req.query.numCustomers);
@@ -241,10 +242,7 @@ module.exports = function (loadUtil,settings, dbtype) {
 	var customerQueue = async.queue(insertCustomer, DATABASE_PARALLELISM);
 	customerQueue.drain = function() {
 		logger.info('all customers loaded');
-		airportCodeMappingQueue.push(airportCodeMappings);
 	}
-
-	var flightQueue = async.queue(insertFlight, DATABASE_PARALLELISM);
 
 	var customers = new Array();
 	var airportCodeMappings = new Array();
@@ -276,6 +274,7 @@ module.exports = function (loadUtil,settings, dbtype) {
 			debug('rows = ' + rows);
 			var flightId = 0;
 			for (var originPorts = 2; originPorts < rows[0].length; originPorts++) {
+				debug('createFlightRelatedData for loop 1');
 				for (var destPorts = 2; destPorts < rows.length; destPorts++){
 					for (var kk = 0; kk < maxDays; kk++) {
 						if (rows[destPorts][originPorts].toString() !== "NA"){

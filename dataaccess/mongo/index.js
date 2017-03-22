@@ -140,13 +140,10 @@ module.exports = function (settings) {
 				, {background:true}, function(err, indexName) {
 					logger.info("createIndex:"+err+":"+indexName);
 				});
-				dbclient.collection(module.dbNames.flightName).createIndex({flightSegmentId:1,scheduledDepartureTime:2}
+				dbclient.collection(module.dbNames.flightName).createIndex({originPort:1}
 				, {background:true}, function(err, indexName) {
 					logger.info("createIndex:"+err+":"+indexName);
 				});
-				dbclient.createIndex(collectionName, {originPort:1}, {background:true}, function(err, indexName) {
-           		 logger.info("createIndex:"+err+":"+indexName);
-           	 });
 				callback(null);
 			}
 		});
@@ -191,6 +188,13 @@ module.exports = function (settings) {
 	};
 
 
+	module.findOneWithCondition = function (collectionname, condition, callback /* (error, insertedDocument) */) {
+		dbclient.collection(collectionname).findOne(condition, function(err, doc) {
+			if (err) callback (err, null);
+			else callback(null, doc);
+	      })
+	};
+	
 	module.findOne = function(collectionname, key, callback /* (error, doc) */) {
 		dbclient.collection(collectionname, function(error, collection){
 			if (error){

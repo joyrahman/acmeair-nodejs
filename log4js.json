@@ -74,10 +74,10 @@
         "category": "mongo"
       },{
         "type": "file",
-        "filename": "acmeair_cloudant.log",
+        "filename": "acmeair_loader.log",
         "maxLogSize": 20480,
         "backups": 3,
-        "category": "cloudant"
+        "category": "loader"
       }
   ]
 }

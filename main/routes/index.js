@@ -73,7 +73,7 @@ module.exports = function (dataaccess, dbtype, settings) {
 		// replace eventually with call to business logic to validate customer
 		validateCustomer(login, password, function(err, customerValid) {
 			if (err) {
-				res.send(500,err); // TODO: do I really need this or is there a cleaner way??
+				res.status(500).send(err); // TODO: do I really need this or is there a cleaner way??
 				return;
 			}
 

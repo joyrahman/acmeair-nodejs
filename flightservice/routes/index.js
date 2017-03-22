@@ -73,7 +73,7 @@ module.exports = function (dataaccess, dbtype, settings) {
 		if (!oneWay) {
 			returnDate = new Date(returnDateWeb.getFullYear(), returnDateWeb.getMonth(), returnDateWeb.getDate()); // convert date to local timezone
 		}
-		dataaccess.findOne({"originPort" : fromAirport, "destPort" : toAirport, "scheduledDepartureTime" : fromDate}, function(err, outboundData){
+		dataaccess.findOneWithCondition(module.dbNames.flightName, {"originPort" : fromAirport, "destPort" : toAirport, "scheduledDepartureTime" : fromDate}, function(err, outboundData){
 			debug('Outbound : ' + JSON.stringify(outboundData))
 			
 			//Match behavior with old code, add flights into array
@@ -84,7 +84,7 @@ module.exports = function (dataaccess, dbtype, settings) {
 			
 			//if (oneWay=='false') { // this needs to be changed like this. currently, oneWay is string instead of boolean
 			if (!oneWay) {
-				dataaccess.findOne({"originPort" : toAirport, "destPort" : fromAirport, "scheduledDepartureTime" : returnDate}, function(err, inboundData){
+				dataaccess.findOneWithCondition(module.dbNames.flightName, {"originPort" : toAirport, "destPort" : fromAirport, "scheduledDepartureTime" : returnDate}, function(err, inboundData){
 					debug('Inbound : ' + JSON.stringify(inboundData))
 					
 					//Match behavior with old code, add flights into array

@@ -1,23 +1,23 @@
 {
-	"port":80,
+	"port":9080,
 	"contextRoot": "/rest/api",	
 
-	"MAX_CUSTOMERS" : 10000,
-	"MAX_DAYS_TO_SCHEDULE_FLIGHTS" : 30,
+	"MAX_CUSTOMERS" : 3,
+	"MAX_DAYS_TO_SCHEDULE_FLIGHTS" : 3,
 	"MAX_FLIGHTS_PER_DAY" : 1,
 
 	"mongoDatabaseName" : "acmeair",
-	"mongoHost" : "127.0.0.1",
-	"mongoPort" : 27017,
+	"mongoHost" : "sl-us-dal-9-portal.1.dblayer.com",
+	"mongoPort" : 10774,
 	"mongoConnectionPoolSize": 10,
-	"mongoUsername": "",
-	"mongoPassword": "",
+	"mongoUsername": "mongo",
+	"mongoPassword": "perf01",
 
 	"useFlightDataRelatedCaching" : true,
 	
 	"flightDataCacheTTL" :  1200000,
 	"flightDataCacheMaxSize" : 100000,
 	
-	"loggerLevel" : "INFO",
+	"loggerLevel" : "DEBUG",
 	"useDevLogger" : false     
 }
