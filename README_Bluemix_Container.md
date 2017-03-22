@@ -38,11 +38,12 @@ Note: memory quota can be 64 MB
 
 ### Create each services in IBM Container service
 
-On local docker server, Go to the root directory of acmeair-nodejs
-Modify [Bluemix_Container.sh](Bluemix_Container.sh)
-	Add your Namespace
-	Add your Mongo DB CF Bridge Name
-If this is the first time set the namespace using the following command [cf ic namespace set](https://console.ng.bluemix.net/docs/containers/container_cli_login.html)
-If you forgot your namespace, run the following command to retrieve "cf ic namespace get"
-Run [Bluemix_Container.sh](Bluemix_Container.sh)
+* On local docker server, Go to the root directory of acmeair-nodejs
+
+	Modify [Bluemix_Container.sh](Bluemix_Container.sh)
+		Add your Namespace
+		Add your Mongo DB CF Bridge Name
+	If this is the first time set the namespace using the following command [cf ic namespace set](https://console.ng.bluemix.net/docs/containers/container_cli_login.html)
+	If you forgot your namespace, run the following command to retrieve "cf ic namespace get"
+	Run [Bluemix_Container.sh](Bluemix_Container.sh)
 	
