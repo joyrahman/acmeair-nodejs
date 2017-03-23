@@ -2,8 +2,8 @@
 	"port":80,
 	"contextRoot": "/rest/api",	
 
-	"MAX_CUSTOMERS" : 3,
-	"MAX_DAYS_TO_SCHEDULE_FLIGHTS" : 3,
+	"MAX_CUSTOMERS" : 10000,
+	"MAX_DAYS_TO_SCHEDULE_FLIGHTS" : 30,
 	"MAX_FLIGHTS_PER_DAY" : 1,
 
 	"mongoDatabaseName" : "acmeair",
