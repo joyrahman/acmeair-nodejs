@@ -221,9 +221,9 @@ module.exports = function (dataaccess, dbtype, settings) {
 	};
 
 	function countItems(dbName, callback /*(error, count)*/) {
-		console.log("Calling count on " + dbName);
+		debug("Calling count on " + dbName);
 		dataaccess.count(dbName, {}, function(error, count) {
-			console.log("Output for "+dbName+" is "+count);
+			debug("Output for "+dbName+" is "+count);
 			if (error) callback(error, null);
 			else {
 				callback(null,count);
