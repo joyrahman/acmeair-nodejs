@@ -291,7 +291,7 @@ module.exports = function (settings) {
 	module.count = function(collectionname, condition, callback/* (error, docs) */) {
 		dbclient.collection(collectionname,function(error, collection){
 			if (error){
-				logger.info("count hit error:"+error);
+				logger.info("count hit error for " + collectionname +  " :"+ error);
 				callback(error, null);
 			}
 			else{

@@ -86,8 +86,10 @@
 				gridOutbound.setStore(newStoreTo);
 				if (response.tripFlights[0].flightsOptions.length > 0) {
 					// TODO: why is flightSegment and originPort an array???
-					dojo.byId("outboundFrom").innerHTML = airportCodeToAirportName(response.tripFlights[0].flightsOptions[0].flightSegment[0].originPort[0]);
-					dojo.byId("outboundTo").innerHTML = airportCodeToAirportName(response.tripFlights[0].flightsOptions[0].flightSegment[0].destPort[0]);
+					dojo.byId("outboundFrom").innerHTML = airportCodeToAirportName(response.tripFlights[0].flightsOptions[0].originPort[0]);
+					dojo.byId("outboundTo").innerHTML = airportCodeToAirportName(response.tripFlights[0].flightsOptions[0].destPort[0]);
+					dojo.byId("returnFrom").innerHTML = airportCodeToAirportName(response.tripFlights[0].flightsOptions[0].destPort[0]);
+					dojo.byId("returnTo").innerHTML = airportCodeToAirportName(response.tripFlights[0].flightsOptions[0].originPort[0]);
 				}
 				
 				var gridReturn = dijit.byId("gridReturn");
@@ -99,8 +101,8 @@
 					gridReturn.setStore(newStoreFrom);
 					if (response.tripFlights[1].flightsOptions.length > 0) {
 						// TODO: why is flightSegment and originPort an array???
-						dojo.byId("returnFrom").innerHTML = airportCodeToAirportName(response.tripFlights[1].flightsOptions[0].flightSegment[0].originPort[0]);
-						dojo.byId("returnTo").innerHTML = airportCodeToAirportName(response.tripFlights[1].flightsOptions[0].flightSegment[0].destPort[0]);
+						dojo.byId("returnFrom").innerHTML = airportCodeToAirportName(response.tripFlights[1].flightsOptions[0].originPort[0]);
+						dojo.byId("returnTo").innerHTML = airportCodeToAirportName(response.tripFlights[1].flightsOptions[0].destPort[0]);
 					}
 				}
 				else {
@@ -341,7 +343,7 @@
 					<script type="dojo/connect" event="onCellClick" args="e">cellclick(e)</script> 
     	        	<thead>
         	        	<tr>
-							<th field="flightSegmentId" width="80px">Flight</th>
+							<th field="flight" width="80px">Flight</th>
 							<th field="scheduledDepartureTime" formatter="dateFormatter" width="175px">Departure Time</th>
 							<th field="scheduledArrivalTime" formatter="dateFormatter" width="175px">Arrival Time</th>
 							<th field="firstClassBaseCost" formatter="currencyFormatter" width="120px">First Class Cost</th>
@@ -355,7 +357,7 @@
 					<script type="dojo/connect" event="onCellClick" args="e">cellclick(e)</script>
     	        	<thead>
         	        	<tr>
-							<th field="flightSegmentId" width="80px">Flight</th>
+							<th field="flight" width="80px">Flight</th>
 							<th field="scheduledDepartureTime" formatter="dateFormatter" width="175px">Departure Time</th>
 							<th field="scheduledArrivalTime" formatter="dateFormatter" width="175px">Arrival Time</th>
 							<th field="firstClassBaseCost" formatter="currencyFormatter" width="120px">First Class Cost</th>

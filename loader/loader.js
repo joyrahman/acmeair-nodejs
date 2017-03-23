@@ -155,6 +155,17 @@ module.exports = function (loadUtil,settings, dbtype) {
 					flightQueue.drain = function() {
 						debug('all flights loaded');
 						res.send('Database Finished Loading');
+						loadUtil.closeDBConnection(function(err){
+							if (!err){
+								loadUtil.initializeDatabaseConnections(function(err){
+									if(err){
+										logger.info('Error initalizing database : ' + err);
+									}
+								});
+							}else{
+								logger.info('Error closing database : ' + err);
+							}
+						});
 					};	
 				});
 				customerQueue.push(customers);
@@ -164,53 +175,6 @@ module.exports = function (loadUtil,settings, dbtype) {
 		//res.send('Trigger DB loading');
 	}
 	
-	
-	module.startLoadCustomerDatabase = function startLoadCustomerDatabase(req, res) {
-
-		logger.info("numCustomers: " + req.query.numCustomers);
-
-		var numCustomers = req.query.numCustomers;
-		if(numCustomers == undefined) {
-			numCustomers = settings.MAX_CUSTOMERS;
-		}
-
-		logger.info('starting loading database');
-
-		loadUtil.removeAll(loadUtil.dbNames.customerName, function(err) {
-			logger.info('#number of customers = ' + customers.length);
-			if (err) {
-				logger.error(err);
-			} else {		
-				createCustomers(numCustomers, function() {
-					logger.info('number of customers = ' + customers.length);
-					customerQueue.push(customers);
-					res.send('Database Finished Loading');
-				});
-			}
-		});
-	}
-
-
-	module.startLoadFlightDatabase = function startLoadFlightDatabase(req, res) {
-		loadUtil.initialize(function(err) {
-			if (err) {
-				debug(err);
-			} else {	
-				var flightQueue = async.queue(insertFlight, DATABASE_PARALLELISM);
-				createFlightRelatedData(function(dataArray){
-					dataArray.forEach(function(value){
-						debug("Data : ",JSON.stringify(value));		
-					});
-					flightQueue.push(flights);
-					flightQueue.drain = function() {
-						debug('all flights loaded');
-						res.send('Database Finished Loading');
-					};	
-				});
-			}
-		});
-	}
-
 	module.clearSessionDatabase = function clearSessionDatabase(req, res) {
 
 		logger.info('starting clearing sesison database');	
@@ -245,8 +209,6 @@ module.exports = function (loadUtil,settings, dbtype) {
 	}
 
 	var customers = new Array();
-	var airportCodeMappings = new Array();
-	var flightSegments = new Array();
 	var flights = new Array();
 
 	function createCustomers(numCustomers, callback) {
@@ -303,6 +265,68 @@ module.exports = function (loadUtil,settings, dbtype) {
 		});
 	}
 
+	/*	
+	module.startLoadCustomerDatabase = function startLoadCustomerDatabase(req, res) {
+
+		logger.info("numCustomers: " + req.query.numCustomers);
+
+		var numCustomers = req.query.numCustomers;
+		if(numCustomers == undefined) {
+			numCustomers = settings.MAX_CUSTOMERS;
+		}
+
+		logger.info('starting loading database');
+
+		loadUtil.removeAll(loadUtil.dbNames.customerName, function(err) {
+			logger.info('#number of customers = ' + customers.length);
+			if (err) {
+				logger.error(err);
+			} else {		
+				createCustomers(numCustomers, function() {
+					logger.info('number of customers = ' + customers.length);
+					customerQueue.push(customers);
+					res.send('Database Finished Loading');
+				});
+			}
+		});
+	}
+
+
+	module.startLoadFlightDatabase = function startLoadFlightDatabase(req, res) {
+		loadUtil.initialize(function(err) {
+			if (err) {
+				debug(err);
+			} else {	
+				var flightQueue = async.queue(insertFlight, DATABASE_PARALLELISM);
+				createFlightRelatedData(function(dataArray){
+					dataArray.forEach(function(value){
+						debug("Data : ",JSON.stringify(value));		
+					});
+					flightQueue.push(flights);
+					flightQueue.drain = function() {
+						debug('all flights loaded');
+						res.send('Database Finished Loading');
+						loadUtil.closeDBConnection(function(err){
+							if (!err){
+								loadUtil.initializeDatabaseConnections(function(err){
+									if(err){
+										logger.info('Error initalizing database : ' + err);
+										debug('Error initalizing database : ', err);
+									}
+								});
+							}else{
+								logger.info('Error closing database : ' + err);
+								debug('Error closing database : ', err);
+							}
+						});
+					};	
+				});
+			}
+		});
+	}
+*/
+
+	
 	return module;
 
 }

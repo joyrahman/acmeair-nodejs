@@ -18,6 +18,6 @@
 	"flightDataCacheTTL" :  1200000,
 	"flightDataCacheMaxSize" : 100000,
 	
-	"loggerLevel" : "DEBUG",
+	"loggerLevel" : "INFO",
 	"useDevLogger" : false     
 }

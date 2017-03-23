@@ -170,17 +170,6 @@
 			}
     	});
 	 
-       	dojo.xhrGet({
-			url: basePath.concat("config/countFlightSegments"),
-			handleAs: "json",
-			load: function(response, ioArgs) {			    
-		    	document.getElementById('flightSegmentData').innerHTML=response;
-			},
-			error: function(response, ioArgs) {
-				alert(response);
-			}
-    	});      
-       	
        	
     	dojo.xhrGet({
 			url: basePath.concat("config/countBookings"),
@@ -193,17 +182,7 @@
 			}
     	});	
     	
-    	dojo.xhrGet({
-			url: basePath.concat("config/countAirports"),
-			handleAs: "json",
-			load: function(response, ioArgs) {	
-		    	document.getElementById('airportData').innerHTML=response;
-			},
-			error: function(response, ioArgs) {
-				alert(response);
-			}
-    	});	
-    	
+
 		return false;
     } 
     
@@ -308,8 +287,6 @@
 	         <tr> <td>Customers</td> <td><div id="custData"></div></td></tr>
 	         <tr> <td>Sessions</td> <td><div id="sessionData"></div></td></tr>
 	         <tr> <td>Flights</td> <td><div id="flightData"></div></td></tr>
-	         <tr> <td>Flight Segments</td> <td><div id="flightSegmentData"></div></td></tr>
-	         <tr> <td>Airports</td> <td><div id="airportData"></div></td></tr>
           </table>
 			
 						
