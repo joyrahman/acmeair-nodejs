@@ -7,9 +7,7 @@ Assume you have access to [Bluemix](https://console.ng.bluemix.net).
 	cf login
 
 ### Preparation
-Edit [Bluemix_CF.sh](Bluemix_CF.sh) to change application name.  "acmeair-node" is the application name and will be used for the hostname of the application. It needs to be unique so many need to add an 
-
-identifies to it to make it unique. You could use the initials of your name.
+Edit [Bluemix_CF.sh](Bluemix_CF.sh) to change application name.  "acmeair-node" is the application name and will be used for the hostname of the application. Add an identifiers to it to make it unique. (e.g. You could use the initials of your name.)
 		
 
 #### Create Mongo DB service
@@ -35,7 +33,9 @@ Option 2 : [Setup Compose Mongo DB & create acmeair database](https://www.compos
 	At the URL prompt, enter above URL that was created:
 	url>mongodb://acmeuser:password@myServer.dblayer.com:27017/acmeair
 
- 
+#### Create application
+	Run previously modified shell script
+	./Bluemix_CF.sh
 
 #### Bind service to application
 	
