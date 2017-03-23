@@ -38,7 +38,7 @@ module.exports = function (settings) {
 
 	module.dbNames = {
 			customerName: "customer",
-			flightName:"flightsnosql",
+			flightName:"flight",
 			bookingName:"booking",
 			customerSessionName:"customerSession"
 	}
