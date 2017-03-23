@@ -34,7 +34,8 @@ Option 2 : [Setup Compose Mongo DB & create acmeair database](https://www.compos
 	url>mongodb://acmeuser:password@myServer.dblayer.com:27017/acmeair
 
 #### Create application
-	Run previously modified shell script
+	Run previously modified shell script (make sure to change the permission of the file)
+	chmod 755 Bluemix_CF.sh
 	./Bluemix_CF.sh
 
 #### Bind service to application
