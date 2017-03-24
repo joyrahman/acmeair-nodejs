@@ -44,6 +44,7 @@ var cookieParser = require('cookie-parser');
 
 var router = express.Router(); 		
 var routes = null;
+var authRoutes = null;
 var loader = null;
 
 var initialized = false;
@@ -65,12 +66,12 @@ function initDB(){
 				clearInterval(registrationId);
 				logger.info("Initialized database connections");
 
-				var authRoutes = new require('./authservice/routes/index.js')(dataaccess,dbtype,settings); 
+				routes = new require('./main/routes/index.js')(dataaccess,dbtype, settings);
+				loader = new require('./loader/loader.js')(routes, settings);
+				authRoutes = new require('./authservice/routes/index.js')(dataaccess,dbtype,settings); 
 				var bookingRoutes = new require('./bookingservice/routes/index.js')(dataaccess,dbtype,settings); 
 				var customerRoutes = new require('./customerservice/routes/index.js')(dataaccess,dbtype,settings); 
 				var flightRoutes = new require('./flightservice/routes/index.js')(dataaccess,dbtype,settings); 
-				routes = new require('./main/routes/index.js')(dataaccess,dbtype, settings);
-				loader = new require('./loader/loader.js')(routes, settings);
 
 				app.use(express.static(__dirname + '/public'));     	// set the static files location /public/img will be /img for users
 				if (settings.useDevLogger)
@@ -94,18 +95,18 @@ function initDB(){
 				router.get('/login/logout', logout);
 
 				// flight service
-				router.post('/flights/queryflights', authRoutes.checkForValidSessionCookie, flightRoutes.queryflights);
+				router.post('/flights/queryflights', authRoutes.checkForValidToken, flightRoutes.queryflights);
 				if(settings.payload){
-					router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflightsWithPayload);
+					router.post('/bookings/bookflights', authRoutes.checkForValidToken, bookingRoutes.bookflightsWithPayload);
 					router.post('/bookings/payload', authRoutes.checkForValidSessionCookie, bookingRoutes.loadPayload);
 				}else {
-					router.post('/bookings/bookflights', authRoutes.checkForValidSessionCookie, bookingRoutes.bookflights);
+					router.post('/bookings/bookflights', authRoutes.checkForValidToken, bookingRoutes.bookflights);
 				}
-				router.post('/bookings/cancelbooking', authRoutes.checkForValidSessionCookie, bookingRoutes.cancelBooking);
-				router.get('/bookings/byuser/:user', authRoutes.checkForValidSessionCookie, bookingRoutes.bookingsByUser);
+				router.post('/bookings/cancelbooking', authRoutes.checkForValidToken, bookingRoutes.cancelBooking);
+				router.get('/bookings/byuser/:user', authRoutes.checkForValidToken, bookingRoutes.bookingsByUser);
 
-				router.get('/customer/byid/:user', authRoutes.checkForValidSessionCookie, customerRoutes.getCustomerById);
-				router.post('/customer/byid/:user', authRoutes.checkForValidSessionCookie, customerRoutes.putCustomerById);
+				router.get('/customer/byid/:user', authRoutes.checkForValidToken, customerRoutes.getCustomerById);
+				router.post('/customer/byid/:user', authRoutes.checkForValidToken, customerRoutes.putCustomerById);
 
 				// main app
 				router.get('/config/runtime', routes.getRuntimeInfo);
@@ -113,10 +114,7 @@ function initDB(){
 				router.get('/config/activeDataService', routes.getActiveDataServiceInfo);
 				router.get('/config/countBookings', routes.countBookings);
 				router.get('/config/countCustomers', routes.countCustomer);
-				router.get('/config/countSessions', routes.countCustomerSessions);
 				router.get('/config/countFlights', routes.countFlights);
-				router.get('/config/countFlightSegments', routes.countFlightSegments);
-				router.get('/config/countAirports' , routes.countAirports);
 				router.get('/loader/load', startLoadDatabase);
 				router.get('/loader/query', loader.getNumConfiguredCustomers);
 
@@ -160,12 +158,12 @@ function checkStatus(req, res){
 }
 
 function login(req, res){
-	routes.login(req, res);
+	authRoutes.login(req, res);
 }
 
 
 function logout(req, res){
-	routes.logout(req, res);
+	authRoutes.logout(req, res);
 }
 
 

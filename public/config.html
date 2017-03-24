@@ -148,17 +148,6 @@
 			}
     	});
     		
-    	dojo.xhrGet({
-			url: basePath.concat("config/countSessions"),
-			handleAs: "json",
-			load: function(response, ioArgs) {			    	
-		    	document.getElementById('sessionData').innerHTML=response;
-			},
-			error: function(response, ioArgs) {
-				alert(response);
-			}
-    	});
-    	
        	dojo.xhrGet({
 			url: basePath.concat("config/countFlights"),
 			handleAs: "json",
@@ -285,7 +274,6 @@
 		     <tr> <th>Entity</th> <th>Count</th></tr>
 		     <tr> <td>Bookings</td> <td><div id="bookingData"></div></td></tr>
 	         <tr> <td>Customers</td> <td><div id="custData"></div></td></tr>
-	         <tr> <td>Sessions</td> <td><div id="sessionData"></div></td></tr>
 	         <tr> <td>Flights</td> <td><div id="flightData"></div></td></tr>
           </table>
 			

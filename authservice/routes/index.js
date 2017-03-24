@@ -16,29 +16,20 @@
 
 module.exports = function (dataaccess, dbtype, settings) {
 	var module = {};
-	var uuid = require('uuid');
 	var log4js = require('log4js');
+	var jwt = require('jsonwebtoken');
+	var debug = require('debug')('auth');
 
+	var secretKey = "secret";
 	log4js.configure('log4js.json', {});
 	var logger = log4js.getLogger('authservice');
 	logger.setLevel(settings.loggerLevel);
-
-	var daModuleName = "../../dataaccess/"+dbtype+"/index.js";
-	logger.info("Use dataaccess:"+daModuleName);
-
-	module.removeAll = function (collectionname, callback /* (error, insertedDocument) */) {
-		dataaccess.removeAll(collectionname, callback)
-	};
 
 	module.dbNames = dataaccess.dbNames
 
 	module.initializeDatabaseConnections = function(callback/*(error)*/) {
 		dataaccess.initializeDatabaseConnections(callback);
 	}
-
-	module.insertOne = function (collectionname, doc, callback /* (error, insertedDocument) */) {
-		dataaccess.insertOne(collectionname, doc, callback)
-	};
 
 	module.login = function(req, res) {
 
@@ -58,70 +49,22 @@ module.exports = function (dataaccess, dbtype, settings) {
 				res.sendStatus(403);
 			}
 			else {
-				createSession(login, function(error, sessioninfo) {
-					if (error) {
-						logger.info(error);
-						res.send(500, error);
-						return;
-					}
-					res.cookie('sessionid', sessioninfo._id);
-					res.send('logged in');
-				});
+				res.cookie('sessionid', jwt.sign({ customerToken : login }, secretKey, { expiresIn: '10m', algorithm: 'HS512' }));
+				res.send('logged in');
 			}
 		});
 	};
-
-	module.authcheck = function(req, res) {
-		logger.debug('validate token ' + req.params.tokenid);
-
-		validateSession(req.params.tokenid, function(error, cs){
-			if (error){
-				res.status(404).send(error);
-			}
-			else{
-				res.send(JSON.stringify(cs));
-			}
-		})
-	}
 
 	module.logout = function (req, res){
 		logger.debug("logging out " + req.cookies.sessionid);
-
-		var sessionid = req.cookies.sessionid;
-		invalidateSession(sessionid, function(error){
-			if (error){
-				res.status(404).send(error);
-			} else {
-				res.cookie('sessionid', '');
-				res.send('logged out');
-			}
-		})
+		debug('just remove jwt cookie');
+		res.cookie('sessionid', '');
+		res.send('logged out');
 	}
-
-	module.countCustomerSessions = function(req,res) {
-		countItems(module.dbNames.customerSessionName, function (error,count){
-			if (error){
-				res.send("-1");
-			} else {
-				res.send(count.toString());
-			}
-		});
-	};
-
-	countItems = function(dbName, callback /*(error, count)*/) {
-		logger.debug("Calling count on " + dbName);
-		dataaccess.count(dbName, {}, function(error, count) {
-			logger.debug("Output for "+dbName+" is "+count);
-			if (error) callback(error, null);
-			else {
-				callback(null,count);
-			}
-		});
-	};
 
 	validateCustomer = function(login, password, callback) {
 
-		dataaccess.findOne(module.dbNames.customerName, username, function(error, customer){
+		dataaccess.findOne(module.dbNames.customerName, login, function(error, customer){
 			if (error) callback (error, null);
 			else{
 				if (customer)
@@ -135,70 +78,31 @@ module.exports = function (dataaccess, dbtype, settings) {
 
 	}
 
-	createSession = function(customerId, callback /* (error, session) */) {
-		logger.debug("create session in DB:"+customerId);
-
-		var now = new Date();
-		var later = new Date(now.getTime() + 1000*60*60*24);
-
-		var document = { "_id" : uuid.v4(), "customerid" : customerId, "lastAccessedTime" : now, "timeoutTime" : later };
-
-		dataaccess.insertOne(module.dbNames.customerSessionName, document, function (error, doc){
-			if (error) callback (error, null)
-			else callback(error, document);
-		});
-	}
-
-	validateSession = function(sessionId, callback /* (error, session) */){
-		logger.debug("validate session in DB:"+sessionId);
-		var now = new Date();
-
-		dataaccess.findOne(module.dbNames.customerSessionName, sessionId, function(err, session) {
-			if (err) callback (err, null);
-			else{
-				if (now > session.timeoutTime) {
-					daraaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid}, function(error) {
-						callback(null, null);
-					});
-				}
-				else
-					callback(null, session);
-			}
-		});
-	}
-
-	invalidateSession = function(sessionid, callback /* error */) {
-		logger.debug("invalidate session in DB:"+sessionid);
-		dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) ;
-	}
-
-	module.checkForValidSessionCookie = function(req, res, next) {
-		logger.debug('checkForValidCookie');
-		var sessionid = req.cookies.sessionid;
-		if (sessionid) {
-			sessiondid = sessionid.trim();
+	module.checkForValidToken = function(req, res, next) {
+		debug('checkForValidCookie');
+		debug('requests', req);
+		var token = req.cookies.sessionid;
+		if (token) {
+			token = token.trim();
 		}
-		if (!sessionid || sessionid == '') {
-			logger.debug('checkForValidCookie - no sessionid cookie so returning 403');
+		if (!token || token == '') {
+			debug('checkForValidCookie - no jwttoken so returning 403');
 			res.sendStatus(403);
 			return;
 		}
 
-		validateSession(sessionid, function(err, customerid) {
+		jwt.verify(token, secretKey, function(err, decoded) {
 			if (err) {
-				logger.debug('checkForValidCookie - system error validating session so returning 500');
-				res.sendStatus(500);
-				return;
-			}
-
-			if (customerid) {
-				logger.debug('checkForValidCookie - good session so allowing next route handler to be called');
-				req.acmeair_login_user = customerid;
+				debug('token error',err);
+				res.status(401);
+				res.send(err);
+			}else if (decoded.customerToken == req.cookies.loggedinuser){
+				debug('token correct');
+				req.acmeair_login_user = req.cookies.loggedinuser;
 				next();
 				return;
-			}
-			else {
-				logger.debug('checkForValidCookie - bad session so returning 403');
+			}else{
+				debug('token unknown', decoded.customerToken);
 				res.sendStatus(403);
 				return;
 			}

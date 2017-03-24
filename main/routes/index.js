@@ -63,78 +63,6 @@ module.exports = function (dataaccess, dbtype, settings) {
 	};
 
 
-	module.login = function(req, res) {
-		logger.debug('logging in user');
-		var login = req.body.login;
-		var password = req.body.password;
-
-		res.cookie('sessionid', '');
-
-		// replace eventually with call to business logic to validate customer
-		validateCustomer(login, password, function(err, customerValid) {
-			if (err) {
-				res.status(500).send(err); // TODO: do I really need this or is there a cleaner way??
-				return;
-			}
-
-			if (!customerValid) {
-				res.sendStatus(403);
-			}
-			else {
-				createSession(login, function(error, sessionid) {
-					if (error) {
-						logger.info(error);
-						res.send(500, error);
-						return;
-					}
-					res.cookie('sessionid', sessionid);
-					res.send('logged in');
-				});
-			}
-		});
-	};
-
-	function validateCustomer(username, password, callback /* (error, boolean validCustomer) */) {
-		dataaccess.findOne(module.dbNames.customerName, username, function(error, customer){
-			if (error) callback (error, null);
-			else{
-				if (customer)
-				{
-					callback(null, customer.password == password);
-				}
-				else
-					callback(null, false)
-			}
-		});
-	};
-
-	function createSession(customerId, callback /* (error, sessionId) */) {
-		var now = new Date();
-		var later = new Date(now.getTime() + 1000*60*60*24);
-
-		var document = { "_id" : uuid.v4(), "customerid" : customerId, "lastAccessedTime" : now, "timeoutTime" : later };
-
-		dataaccess.insertOne(module.dbNames.customerSessionName, document, function (error, doc){
-			if (error) callback (error, null)
-			else callback(error, document._id);
-		});
-	}
-
-	module.logout = function(req, res) {
-		logger.debug('logging out user');
-
-		var sessionid = req.cookies.sessionid;
-		var login = req.body.login;
-		invalidateSession(sessionid, function(err) {
-			res.cookie('sessionid', '');
-			res.send('logged out');
-		});
-	};
-
-	function invalidateSession(sessionid, callback /* error */) {
-		dataaccess.remove(module.dbNames.customerSessionName,{'_id':sessionid},callback) 
-	}
-
 	/*
 	 * STAY
 	 */
@@ -180,38 +108,8 @@ module.exports = function (dataaccess, dbtype, settings) {
 		});
 	};
 
-	module.countCustomerSessions = function(req,res) {
-		countItems(module.dbNames.customerSessionName, function (error,count){
-			if (error){
-				res.send("-1");
-			} else {
-				res.send(count.toString());
-			}
-		});
-	};
-
 	module.countFlights = function(req,res) {
 		countItems(module.dbNames.flightName, function (error,count){
-			if (error){
-				res.send("-1");
-			} else {
-				res.send(count.toString());
-			}
-		});
-	};
-
-	module.countFlightSegments = function(req,res) {
-		countItems(module.dbNames.flightSegmentName, function (error,count){
-			if (error){
-				res.send("-1");
-			} else {
-				res.send(count.toString());
-			}
-		});
-	};
-
-	module.countAirports = function(req,res) {
-		countItems(module.dbNames.airportCodeMappingName, function (error,count){
 			if (error){
 				res.send("-1");
 			} else {
