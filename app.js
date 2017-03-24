@@ -95,7 +95,7 @@ function initDB(){
 				router.get('/login/logout', logout);
 
 				// flight service
-				router.post('/flights/queryflights', authRoutes.checkForValidToken, flightRoutes.queryflights);
+				router.post('/flights/queryflights', flightRoutes.queryflights);
 				if(settings.payload){
 					router.post('/bookings/bookflights', authRoutes.checkForValidToken, bookingRoutes.bookflightsWithPayload);
 					router.post('/bookings/payload', authRoutes.checkForValidSessionCookie, bookingRoutes.loadPayload);

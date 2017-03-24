@@ -101,6 +101,16 @@ module.exports = function (dataaccess, dbtype, settings) {
 				req.acmeair_login_user = req.cookies.loggedinuser;
 				next();
 				return;
+			}else if (decoded.customerToken == req.body.userid){
+				debug('token correct');
+				req.acmeair_login_user = req.body.userid;
+				next();
+				return;
+			}else if (decoded.customerToken == req.params.user){
+				debug('token correct');
+				req.acmeair_login_user = req.body.userid;
+				next();
+				return;
 			}else{
 				debug('token unknown', decoded.customerToken);
 				res.sendStatus(403);
