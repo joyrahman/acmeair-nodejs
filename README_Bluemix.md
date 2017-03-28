@@ -6,10 +6,6 @@ Assume you have access to [Bluemix](https://console.ng.bluemix.net).
 	
 	cf login
 
-### Preparation
-Edit [Bluemix_CF.sh](Bluemix_CF.sh) to change application name.  "acmeair-node" is the application name and will be used for the hostname of the application. Add an identifiers to it to make it unique. (e.g. You could use the initials of your name.)
-		
-
 #### Create Mongo DB service
 	   
 Option 1 : Go to Bluemix Catalog, then create a "Compose for MongoDB" service provided by IBM
@@ -33,17 +29,16 @@ Option 2 : [Setup Compose Mongo DB & create acmeair database](https://www.compos
 	At the URL prompt, enter above URL that was created:
 	url>mongodb://acmeuser:password@myServer.dblayer.com:27017/acmeair
 
-#### Create application
-	Run previously modified shell script (make sure to change the permission of the file)
+
+### Preparation
+	Edit [Bluemix_CF.sh](Bluemix_CF.sh) to change application name (appName).  "acmeair-node" is the application name and will be used for the hostname of the application. Add an identifiers to it to make it unique. (e.g. You could use the initials of your name.)
+	Also change the Mongo DB Service name (mongoService).  ""
+		
+
+#### Create & start application
+	Run previously modified shell script (make sure to change the permission of the file). It will deploy the application to Cloud Foundry, bind Mongo DB service, then startup the Acmeair Application.
 	chmod 755 Bluemix_CF.sh
 	./Bluemix_CF.sh
-
-#### Bind service to application
 	
-	cf bind-service acmeair-node mongoCompose
-	
-#### Start application and Access application URL
-	
-	cf start acmeair-node
-	
+	Access application with the following URL (use your application name instead of "acmeair-node")	
 	http://acmeair-node.mybluemix.net
