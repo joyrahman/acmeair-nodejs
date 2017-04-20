@@ -39,8 +39,7 @@ module.exports = function (settings) {
 	module.dbNames = {
 			customerName: "customer",
 			flightName:"flight",
-			bookingName:"booking",
-			customerSessionName:"customerSession"
+			bookingName:"booking"
 	}
 
 	var dbclient = null;
